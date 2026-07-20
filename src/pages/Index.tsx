@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import WebGLHero from "@/components/WebGLHero";
 import SpaceDNA from "@/components/SpaceDNA";
+import AffiliateShowcase from "@/components/AffiliateShowcase";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import CTASection from "@/components/CTASection";
@@ -13,6 +14,7 @@ const Index = () => {
       <WebGLHero />
 
       <SpaceDNA />
+      <AffiliateShowcase />
       <HowItWorksSection />
       <ShowcaseSection />
       <CTASection />
