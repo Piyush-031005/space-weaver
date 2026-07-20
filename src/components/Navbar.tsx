@@ -20,7 +20,7 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between h-18 md:h-22">
         <a href="#hero" className="text-display text-2xl md:text-3xl font-semibold text-foreground tracking-tight italic">
-          SpaceFlow
+          SpaceWeaver
         </a>
 
         {/* Desktop */}

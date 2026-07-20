@@ -36,7 +36,7 @@ const FeaturesSection = () => {
           className="text-center mb-28"
         >
           <p className="text-[10px] uppercase tracking-[0.5em] text-muted-foreground mb-6 font-body font-medium">
-            Why SpaceFlow
+            Why SpaceWeaver
           </p>
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-semibold text-foreground leading-[0.95]">
             Design Smarter,<br className="hidden md:block" />
