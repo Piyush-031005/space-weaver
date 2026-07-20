@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
+import WebGLHero from "@/components/WebGLHero";
 
 import HowItWorksSection from "@/components/HowItWorksSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
@@ -10,7 +10,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <HeroSection />
+      <WebGLHero />
 
       <HowItWorksSection />
       <ShowcaseSection />
