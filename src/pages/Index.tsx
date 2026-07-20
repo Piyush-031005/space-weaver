@@ -2,9 +2,6 @@ import Navbar from "@/components/Navbar";
 import WebGLHero from "@/components/WebGLHero";
 import SpaceDNA from "@/components/SpaceDNA";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
-import HowItWorksSection from "@/components/HowItWorksSection";
-import ShowcaseSection from "@/components/ShowcaseSection";
-import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -15,9 +12,6 @@ const Index = () => {
 
       <SpaceDNA />
       <AffiliateShowcase />
-      <HowItWorksSection />
-      <ShowcaseSection />
-      <CTASection />
       <Footer />
     </div>
   );

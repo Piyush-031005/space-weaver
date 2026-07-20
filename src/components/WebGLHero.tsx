@@ -34,86 +34,72 @@ const FurniturePlane = ({
 }) => {
   const texture = useTexture(src);
   const meshRef = useRef<THREE.Mesh>(null);
+  const ghost1Ref = useRef<THREE.Mesh>(null);
+  const ghost2Ref = useRef<THREE.Mesh>(null);
   
   // Calculate aspect ratio dynamically
   const aspect = texture.image ? texture.image.width / texture.image.height : 1;
   
   // We use GSAP to animate position/rotation based on phase
   useEffect(() => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !ghost1Ref.current || !ghost2Ref.current) return;
+    
+    const meshes = [
+      { ref: meshRef.current, delayOffset: 0, opacity: 0.9 },
+      { ref: ghost1Ref.current, delayOffset: 0.08, opacity: 0.4 },
+      { ref: ghost2Ref.current, delayOffset: 0.16, opacity: 0.15 },
+    ];
     
     if (phase === "chaos") {
-      gsap.to(meshRef.current.position, {
-        x: chaosPos.x,
-        y: chaosPos.y,
-        z: 0,
-        duration: 1.5,
-        ease: "power2.out",
-      });
-      gsap.to(meshRef.current.rotation, {
-        z: chaosPos.r,
-        duration: 1.5,
-        ease: "power2.out",
-      });
-      gsap.to(meshRef.current.scale, {
-        x: 0.8,
-        y: 0.8,
-        z: 0.8,
-        duration: 1.5,
+      meshes.forEach(({ ref }) => {
+        gsap.to(ref.position, { x: chaosPos.x, y: chaosPos.y, z: 0, duration: 1.5, ease: "power2.out" });
+        gsap.to(ref.rotation, { z: chaosPos.r, duration: 1.5, ease: "power2.out" });
+        gsap.to(ref.scale, { x: 0.8, y: 0.8, z: 0.8, duration: 1.5 });
       });
     } else if (phase === "arranging") {
-      // Anticipation step
-      gsap.to(meshRef.current.scale, {
-        x: 0.7,
-        y: 0.7,
-        z: 0.7,
-        duration: 0.4,
-        ease: "power1.inOut",
+      meshes.forEach(({ ref }) => {
+        gsap.to(ref.scale, { x: 0.7, y: 0.7, z: 0.7, duration: 0.4, ease: "power1.inOut" });
       });
     } else if (phase === "arranged") {
-      // Magnetic pull with slight bounce
-      gsap.to(meshRef.current.position, {
-        x: arrangedPos.x,
-        y: arrangedPos.y,
-        z: 0,
-        duration: 2.5 + index * 0.1,
-        ease: "elastic.out(1, 0.75)",
-        delay: index * 0.05,
-      });
-      gsap.to(meshRef.current.rotation, {
-        z: arrangedPos.r,
-        duration: 2.5 + index * 0.1,
-        ease: "elastic.out(1, 0.75)",
-        delay: index * 0.05,
-      });
-      gsap.to(meshRef.current.scale, {
-        x: 1,
-        y: 1,
-        z: 1,
-        duration: 2.5,
-        ease: "elastic.out(1, 0.75)",
-        delay: index * 0.05,
+      meshes.forEach(({ ref, delayOffset }) => {
+        const baseDelay = index * 0.05 + delayOffset;
+        gsap.to(ref.position, { x: arrangedPos.x, y: arrangedPos.y, z: -delayOffset, duration: 2.5 + index * 0.1, ease: "elastic.out(1, 0.75)", delay: baseDelay });
+        gsap.to(ref.rotation, { z: arrangedPos.r, duration: 2.5 + index * 0.1, ease: "elastic.out(1, 0.75)", delay: baseDelay });
+        gsap.to(ref.scale, { x: 1, y: 1, z: 1, duration: 2.5, ease: "elastic.out(1, 0.75)", delay: baseDelay });
       });
     }
   }, [phase, chaosPos, arrangedPos, index]);
 
   // Subtle breathing animation when in chaos or arranged
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !ghost1Ref.current || !ghost2Ref.current) return;
     const t = clock.getElapsedTime();
     if (phase === "arranged") {
-      // Breathing ecosystem - slow subtle float
       meshRef.current.position.y += Math.sin(t * 0.5 + index) * 0.002;
+      ghost1Ref.current.position.y += Math.sin(t * 0.5 + index - 0.2) * 0.002;
+      ghost2Ref.current.position.y += Math.sin(t * 0.5 + index - 0.4) * 0.002;
     } else if (phase === "chaos") {
       meshRef.current.position.y += Math.sin(t + index) * 0.005;
+      ghost1Ref.current.position.y += Math.sin(t + index - 0.1) * 0.005;
+      ghost2Ref.current.position.y += Math.sin(t + index - 0.2) * 0.005;
     }
   });
 
   return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[size * aspect, size]} />
-      <meshBasicMaterial map={texture} transparent opacity={0.9} />
-    </mesh>
+    <group>
+      <mesh ref={ghost2Ref}>
+        <planeGeometry args={[size * aspect, size]} />
+        <meshBasicMaterial map={texture} transparent opacity={0.15} />
+      </mesh>
+      <mesh ref={ghost1Ref}>
+        <planeGeometry args={[size * aspect, size]} />
+        <meshBasicMaterial map={texture} transparent opacity={0.4} />
+      </mesh>
+      <mesh ref={meshRef}>
+        <planeGeometry args={[size * aspect, size]} />
+        <meshBasicMaterial map={texture} transparent opacity={0.9} />
+      </mesh>
+    </group>
   );
 };
 

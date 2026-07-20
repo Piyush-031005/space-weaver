@@ -53,7 +53,7 @@ const SpaceDNA = () => {
           transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="flex-1 w-full max-w-md relative"
         >
-          <div className="relative rounded-[2rem] bg-card p-10 border border-border/50 shadow-card-hover overflow-hidden">
+          <div className="relative rounded-[2rem] bg-background/50 p-10 overflow-hidden">
             {/* Geometric Glyph Background */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />

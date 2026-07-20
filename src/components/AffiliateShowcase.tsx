@@ -35,7 +35,7 @@ const products = [
 
 const AffiliateShowcase = () => {
   return (
-    <section className="section-padding bg-card border-t border-border/30">
+    <section className="section-padding bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <motion.div
@@ -74,7 +74,7 @@ const AffiliateShowcase = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.15 }}
               whileHover={{ y: -8 }}
-              className="group block relative bg-background rounded-[1.5rem] border border-border/50 p-6 overflow-hidden transition-all hover:border-accent/30 hover:shadow-xl"
+              className="group block relative bg-transparent rounded-[1.5rem] p-6 overflow-hidden transition-all hover:bg-accent/5"
             >
               <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
                 <ExternalLink className="w-5 h-5 text-accent" />
