@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, Sofa, BedDouble, Monitor, Lamp, BookOpen, Armchair } from "lucide-react";
+import { X, Plus, Minus, Sofa, BedDouble, Monitor, Lamp, BookOpen, Armchair, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface RoomBuilderProps {
@@ -20,52 +20,61 @@ const FURNITURE_TYPES = [
   { type: "lamp", label: "Floor Lamp", icon: Lamp, defaultWidth: 1, defaultDepth: 1 },
 ];
 
+interface CustomItem {
+  id: string;
+  type: string;
+  label: string;
+  width: number;
+  depth: number;
+}
+
 const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, isGenerating }) => {
   const [width, setWidth] = useState<number>(15);
   const [length, setLength] = useState<number>(20);
   const [vibe, setVibe] = useState<string>("cozy");
   
-  // Store counts for each type
-  const [inventory, setInventory] = useState<Record<string, number>>({
-    sofa: 1,
-    table: 1,
-    chair: 1,
-    bed: 1,
-    tv: 1,
-    lamp: 1,
-    bookshelf: 1
-  });
+  // Custom items list instead of simple counts
+  const [items, setItems] = useState<CustomItem[]>([
+    { id: "sofa-1", type: "sofa", label: "Sofa", width: 6, depth: 3 },
+    { id: "chair-1", type: "chair", label: "Chair", width: 2, depth: 2 },
+    { id: "table-1", type: "table", label: "Table", width: 3, depth: 3 }
+  ]);
 
-  const handleItemCount = (type: string, delta: number) => {
-    setInventory(prev => ({
-      ...prev,
-      [type]: Math.max(0, (prev[type] || 0) + delta)
-    }));
+  const handleAddItem = (typeDef: typeof FURNITURE_TYPES[0]) => {
+    const newItem: CustomItem = {
+      id: `${typeDef.type}-${Date.now()}`,
+      type: typeDef.type,
+      label: typeDef.label,
+      width: typeDef.defaultWidth,
+      depth: typeDef.defaultDepth
+    };
+    setItems([...items, newItem]);
   };
 
-  const handleGenerateClick = () => {
-    // Flatten inventory into individual items for the backend payload
-    const furniturePayload: any[] = [];
-    let idCounter = 1;
+  const handleRemoveItem = (id: string) => {
+    setItems(items.filter(item => item.id !== id));
+  };
 
-    Object.entries(inventory).forEach(([type, count]) => {
-      const typeDef = FURNITURE_TYPES.find(t => t.type === type);
-      if (!typeDef) return;
+  const handleUpdateItem = (id: string, field: "width" | "depth", value: number) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
 
-      for (let i = 0; i < count; i++) {
-        furniturePayload.push({
-          id: `${type}-${idCounter++}`,
-          type: type,
-          width: typeDef.defaultWidth,
-          depth: typeDef.defaultDepth
-        });
-      }
-    });
-
+  const handleGenerateClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Explicitly create payload without any Event objects
     const payload = {
       room: { width, length },
       fixedElements: [],
-      furniture: furniturePayload,
+      furniture: items.map(item => ({
+        id: item.id,
+        type: item.type,
+        width: item.width,
+        depth: item.depth
+      })),
       vibe: vibe
     };
 
@@ -94,7 +103,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
             className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background border-l border-border/50 shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-background z-10">
               <h2 className="font-display font-bold text-2xl">Room Configurator</h2>
               <button onClick={onClose} className="p-2 hover:bg-accent/10 rounded-full transition-colors text-muted-foreground hover:text-foreground">
                 <X size={20} />
@@ -102,7 +111,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-10 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 space-y-10 custom-scrollbar pb-32">
               
               {/* Step 1: Dimensions */}
               <section className="space-y-4">
@@ -129,41 +138,79 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                 </div>
               </section>
 
-              {/* Step 2: Inventory */}
+              {/* Step 2: Custom Inventory */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">2. Furniture Inventory</h3>
-                <div className="space-y-3">
-                  {FURNITURE_TYPES.map(({ type, label, icon: Icon }) => (
-                    <div key={type} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-muted/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-background rounded-lg shadow-sm border border-border/50">
-                          <Icon size={16} className="text-primary" />
-                        </div>
-                        <span className="font-medium text-sm">{label}</span>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent flex justify-between items-center">
+                  2. Furniture Inventory
+                </h3>
+                
+                {/* Add New Item Selector */}
+                <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar -mx-2 px-2">
+                  {FURNITURE_TYPES.map((typeDef) => {
+                    const Icon = typeDef.icon;
+                    return (
+                      <button
+                        key={typeDef.type}
+                        onClick={() => handleAddItem(typeDef)}
+                        className="flex-shrink-0 flex items-center gap-2 bg-muted/30 border border-border rounded-full px-4 py-2 hover:bg-primary/10 hover:border-primary/50 transition-colors"
+                      >
+                        <Icon size={14} className="text-muted-foreground" />
+                        <span className="text-xs font-medium">{typeDef.label}</span>
+                        <Plus size={12} className="text-primary" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* List of custom items */}
+                <div className="space-y-3 mt-4">
+                  {items.map((item) => (
+                    <div key={item.id} className="p-4 rounded-xl border border-border/50 bg-muted/10 relative group">
+                      <button 
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="absolute right-3 top-3 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="font-semibold text-foreground text-sm">{item.label}</span>
                       </div>
                       
-                      <div className="flex items-center gap-3 bg-background rounded-lg border border-border/50 p-1">
-                        <button 
-                          onClick={() => handleItemCount(type, -1)}
-                          className="p-1 hover:bg-muted rounded-md text-muted-foreground transition-colors"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="w-4 text-center text-sm font-medium">{inventory[type] || 0}</span>
-                        <button 
-                          onClick={() => handleItemCount(type, 1)}
-                          className="p-1 hover:bg-muted rounded-md text-muted-foreground transition-colors"
-                        >
-                          <Plus size={14} />
-                        </button>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Width (ft)</label>
+                          <input 
+                            type="number" 
+                            step="0.5"
+                            value={item.width}
+                            onChange={(e) => handleUpdateItem(item.id, "width", Number(e.target.value))}
+                            className="w-full bg-background border border-border/50 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Depth (ft)</label>
+                          <input 
+                            type="number" 
+                            step="0.5"
+                            value={item.depth}
+                            onChange={(e) => handleUpdateItem(item.id, "depth", Number(e.target.value))}
+                            className="w-full bg-background border border-border/50 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
+                  {items.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
+                      No items added yet.
+                    </div>
+                  )}
                 </div>
               </section>
 
               {/* Step 3: Vibe */}
-              <section className="space-y-4 pb-8">
+              <section className="space-y-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">3. Spatial Objective</h3>
                 <div className="grid grid-cols-1 gap-3">
                   {[
@@ -195,11 +242,10 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                   ))}
                 </div>
               </section>
-
             </div>
 
-            {/* Footer Action */}
-            <div className="p-6 border-t border-border/50 bg-background">
+            {/* Footer Action - fixed at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-border/50 bg-background/95 backdrop-blur-md">
               <Button 
                 onClick={handleGenerateClick}
                 disabled={isGenerating}

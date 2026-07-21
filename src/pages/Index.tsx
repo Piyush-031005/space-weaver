@@ -16,8 +16,13 @@ const Index = () => {
 
   const handleGenerate = async (customPayload?: any) => {
     setIsGenerating(true);
-    // If no custom payload, use the stored one or a fallback
-    const payloadToUse = customPayload || currentPayload || {
+    
+    // Check if customPayload is actually a React event
+    const isEvent = customPayload && (customPayload.nativeEvent || customPayload.target);
+    const validPayload = isEvent ? null : customPayload;
+
+    // If no valid custom payload, use the stored one or a fallback
+    const payloadToUse = validPayload || currentPayload || {
       room: { width: 15, length: 20 },
       fixedElements: [],
       furniture: [
@@ -28,8 +33,8 @@ const Index = () => {
       vibe: "cozy"
     };
 
-    if (customPayload) {
-      setCurrentPayload(customPayload);
+    if (validPayload) {
+      setCurrentPayload(validPayload);
       setIsBuilderOpen(false); // Close the sidebar on generation
     }
 
