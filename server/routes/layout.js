@@ -9,6 +9,8 @@ const router = express.Router();
 
 router.post('/generate-layout', async (req, res) => {
   try {
+    const { room, fixedElements, furniture } = req.body;
+
     const vibes = [
       { id: 'space_saver', name: 'Efficiency (Space Saver)', desc: 'Maximizes open floor space in the center.' },
       { id: 'cozy', name: 'Intimacy (Cozy & Comfy)', desc: 'Pulls seating together for conversation.' },
