@@ -9,29 +9,45 @@ const router = express.Router();
 
 router.post('/generate-layout', async (req, res) => {
   try {
-    const { room, fixedElements, furniture, vibe } = req.body;
+    const vibes = [
+      { id: 'space_saver', name: 'Efficiency (Space Saver)', desc: 'Maximizes open floor space in the center.' },
+      { id: 'cozy', name: 'Intimacy (Cozy & Comfy)', desc: 'Pulls seating together for conversation.' },
+      { id: 'aesthetic', name: 'Gallery (Aesthetic)', desc: 'Symmetrical alignment with breathing room.' }
+    ];
 
-    // 1. Scoring Engine: Generate initial placement based on vibe mode
-    const layout = scorePlacement(room, fixedElements, furniture, vibe);
+    const options = [];
 
-    // 2. Collision Engine: Validate overlaps (and theoretically nudge, but for v1 just flag)
-    const collisions = checkCollisions(layout);
+    for (const vibeOption of vibes) {
+      // 1. Scoring Engine: Generate initial placement based on vibe mode
+      const layout = scorePlacement(room, fixedElements, furniture, vibeOption.id);
 
-    // 3. Living Path Engine: Calculate walking clearances and access
-    const clearanceScores = calculateClearance(room, fixedElements, layout);
+      // 2. Collision Engine: Validate overlaps
+      const collisions = checkCollisions(layout);
 
-    // 4. Space Genome Engine: Generate archetype and metrics
-    const genome = generateGenome(clearanceScores);
+      // 3. Living Path Engine: Calculate walking clearances and access
+      const clearanceScores = calculateClearance(room, fixedElements, layout);
 
-    // 5. Critic Engine: Call Claude API to generate witty roast lines based on metrics
-    const roast = await generateRoast(clearanceScores, genome, collisions);
+      // 4. Space Genome Engine: Generate archetype and metrics
+      const genome = generateGenome(clearanceScores);
+      
+      // 5. Critic Engine: Call Claude API to generate witty roast lines based on metrics
+      // (Using await in loop is fine here as it's mock API currently)
+      const roast = await generateRoast(clearanceScores, genome, collisions);
+
+      options.push({
+        id: vibeOption.id,
+        name: vibeOption.name,
+        desc: vibeOption.desc,
+        layout,
+        clearanceScores,
+        genome,
+        roast,
+        collisions
+      });
+    }
 
     res.json({
-      layout,
-      clearanceScores,
-      genome,
-      roast,
-      collisions
+      options // Return the array of 3 generated options
     });
   } catch (error) {
     console.error("Layout generation error:", error);

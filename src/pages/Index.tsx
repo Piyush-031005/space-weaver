@@ -5,9 +5,11 @@ import SpaceDNA from "@/components/SpaceDNA";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
 import Footer from "@/components/Footer";
 import RoomBuilder from "@/components/RoomBuilder";
+import LayoutGallery from "@/components/LayoutGallery";
 
 const Index = () => {
   const [spaceData, setSpaceData] = useState<any>(null);
+  const [activeOptionIndex, setActiveOptionIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   
@@ -49,7 +51,8 @@ const Index = () => {
       
       // Simulate slight delay for cinematic effect
       setTimeout(() => {
-        setSpaceData(data);
+        setSpaceData(data); // data now contains { options: [...] }
+        setActiveOptionIndex(0); // Reset to first option
         setIsGenerating(false);
       }, 1500);
 
@@ -59,17 +62,27 @@ const Index = () => {
     }
   };
 
+  const activeOption = spaceData?.options?.[activeOptionIndex];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar onGetStarted={() => setIsBuilderOpen(true)} />
       <WebGLHero 
         onGenerate={() => setIsBuilderOpen(true)} // Open builder instead of auto-generating
         isGenerating={isGenerating} 
-        hasGenerated={!!spaceData}
-        layoutData={spaceData?.layout}
+        hasGenerated={!!activeOption}
+        layoutData={activeOption?.layout}
       />
 
-      {spaceData && <SpaceDNA spaceData={spaceData} />}
+      {spaceData?.options && (
+        <LayoutGallery 
+          options={spaceData.options} 
+          activeIndex={activeOptionIndex}
+          onSelect={setActiveOptionIndex} 
+        />
+      )}
+
+      {activeOption && <SpaceDNA spaceData={activeOption} />}
       <AffiliateShowcase />
       <Footer />
       
