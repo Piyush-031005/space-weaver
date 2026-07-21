@@ -8,7 +8,11 @@ const navLinks = [
   { label: "Showcase", href: "#showcase" },
 ];
 
-const Navbar = () => {
+interface NavbarProps {
+  onGetStarted?: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onGetStarted }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -34,12 +38,12 @@ const Navbar = () => {
               {link.label}
             </a>
           ))}
-          <a
-            href="#cta"
+          <button
+            onClick={onGetStarted}
             className="bg-primary text-primary-foreground px-7 py-2.5 rounded-full text-[11px] font-medium hover:bg-warm-dark transition-all duration-300 tracking-[0.15em] uppercase font-body"
           >
             Get Started
-          </a>
+          </button>
         </div>
 
         {/* Mobile toggle */}
@@ -84,13 +88,15 @@ const Navbar = () => {
                   {link.label}
                 </a>
               ))}
-              <a
-                href="#cta"
-                onClick={() => setIsOpen(false)}
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onGetStarted && onGetStarted();
+                }}
                 className="bg-primary text-primary-foreground px-6 py-3 rounded-full text-sm font-medium text-center mt-2 font-body"
               >
                 Get Started
-              </a>
+              </button>
             </div>
           </motion.div>
         )}

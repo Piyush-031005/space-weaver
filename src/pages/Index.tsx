@@ -4,36 +4,40 @@ import WebGLHero from "@/components/WebGLHero";
 import SpaceDNA from "@/components/SpaceDNA";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
 import Footer from "@/components/Footer";
+import RoomBuilder from "@/components/RoomBuilder";
 
 const Index = () => {
   const [spaceData, setSpaceData] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  
+  // Store the user's custom payload
+  const [currentPayload, setCurrentPayload] = useState<any>(null);
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (customPayload?: any) => {
     setIsGenerating(true);
-    try {
-      // Mock payload to match the backend structure
-      const payload = {
-        room: { width: 15, length: 20 },
-        fixedElements: [],
-        furniture: [
-          { id: 'sofa-1', type: 'sofa', width: 6, depth: 3 },
-          { id: 'table-1', type: 'table', width: 3, depth: 3 },
-          { id: 'chair-1', type: 'chair', width: 2, depth: 2 },
-          { id: 'bookshelf-1', type: 'bookshelf', width: 4, depth: 1 },
-          { id: 'bed-1', type: 'bed', width: 5, depth: 7 },
-          { id: 'tv-1', type: 'tv', width: 4, depth: 1 },
-          { id: 'lamp-1', type: 'lamp', width: 1, depth: 1 },
-          { id: 'recliner-1', type: 'chair', width: 3, depth: 3 },
-          { id: 'nightstand-1', type: 'table', width: 2, depth: 2 },
-        ],
-        vibe: "cozy"
-      };
+    // If no custom payload, use the stored one or a fallback
+    const payloadToUse = customPayload || currentPayload || {
+      room: { width: 15, length: 20 },
+      fixedElements: [],
+      furniture: [
+        { id: 'sofa-1', type: 'sofa', width: 6, depth: 3 },
+        { id: 'table-1', type: 'table', width: 3, depth: 3 },
+        { id: 'chair-1', type: 'chair', width: 2, depth: 2 }
+      ],
+      vibe: "cozy"
+    };
 
+    if (customPayload) {
+      setCurrentPayload(customPayload);
+      setIsBuilderOpen(false); // Close the sidebar on generation
+    }
+
+    try {
       const response = await fetch("http://localhost:5000/api/generate-layout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payloadToUse)
       });
       
       const data = await response.json();
@@ -52,9 +56,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar onGetStarted={() => setIsBuilderOpen(true)} />
       <WebGLHero 
-        onGenerate={handleGenerate} 
+        onGenerate={() => setIsBuilderOpen(true)} // Open builder instead of auto-generating
         isGenerating={isGenerating} 
         hasGenerated={!!spaceData}
         layoutData={spaceData?.layout}
@@ -63,6 +67,13 @@ const Index = () => {
       {spaceData && <SpaceDNA spaceData={spaceData} />}
       <AffiliateShowcase />
       <Footer />
+      
+      <RoomBuilder 
+        isOpen={isBuilderOpen}
+        onClose={() => setIsBuilderOpen(false)}
+        onGenerate={handleGenerate}
+        isGenerating={isGenerating}
+      />
     </div>
   );
 };

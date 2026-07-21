@@ -116,7 +116,7 @@ const Scene = ({ phase, layoutData }: { phase: "chaos" | "arranging" | "arranged
     camera.lookAt(0, 0, 0);
   });
 
-  const items = [
+  const defaultItems = [
     { src: sofaImg, chaos: { x: -4, y: -2, r: -0.5 }, arranged: { x: -2.5, y: 1, r: -0.05 }, size: 3.5 },
     { src: tableImg, chaos: { x: 4, y: -2, r: 1.2 }, arranged: { x: 0.5, y: 0, r: 0 }, size: 3 },
     { src: chairImg, chaos: { x: -3, y: 3, r: -0.8 }, arranged: { x: -1.5, y: -1, r: 0.1 }, size: 2 },
@@ -128,26 +128,33 @@ const Scene = ({ phase, layoutData }: { phase: "chaos" | "arranging" | "arranged
     { src: nightstandImg, chaos: { x: -4, y: -1, r: 2.8 }, arranged: { x: 2, y: 2, r: 0 }, size: 1.5 },
   ];
 
+  const typeMap: Record<string, string> = {
+    sofa: sofaImg, table: tableImg, chair: chairImg, bookshelf: bookshelfImg, 
+    bed: bedImg, tv: tvImg, lamp: lampImg
+  };
+
+  const activeItems = layoutData 
+    ? layoutData.map((ld: any, index: number) => ({
+        src: typeMap[ld.type] || sofaImg,
+        chaos: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8, r: Math.random() * 4 },
+        arranged: { x: ld.x - 7.5, y: ld.y - 10, r: ld.rotation },
+        size: Math.max(ld.width, ld.depth) * 0.7
+      }))
+    : defaultItems;
+
   return (
     <group>
-      {items.map((item, i) => {
-        // Use backend layout data if available, otherwise fallback to hardcoded
-        const arranged = layoutData && layoutData[i] 
-          ? { x: layoutData[i].x - 7.5, y: layoutData[i].y - 10, r: layoutData[i].rotation } 
-          : item.arranged;
-          
-        return (
-          <FurniturePlane
-            key={i}
-            index={i}
-            src={item.src}
-            chaosPos={item.chaos}
-            arrangedPos={arranged}
-            size={item.size}
-            phase={phase}
-          />
-        );
-      })}
+      {activeItems.map((item, i) => (
+        <FurniturePlane
+          key={i}
+          index={i}
+          src={item.src}
+          chaosPos={item.chaos}
+          arrangedPos={item.arranged}
+          size={item.size}
+          phase={phase}
+        />
+      ))}
     </group>
   );
 };
