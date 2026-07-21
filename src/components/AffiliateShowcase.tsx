@@ -2,9 +2,10 @@ import { motion } from "framer-motion";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import sofaImg from "@/assets/furniture/sofa.png";
-import tableImg from "@/assets/furniture/table.png";
-import lampImg from "@/assets/furniture/lamp.png";
+import React, { Suspense, useMemo } from "react";
+import { Canvas } from "@react-three/fiber";
+import { useGLTF, Environment, OrbitControls } from "@react-three/drei";
+import * as THREE from "three";
 
 const products = [
   {
@@ -12,7 +13,7 @@ const products = [
     name: "Aura Minimalist Sofa",
     brand: "Design Within Reach",
     price: "$1,299",
-    image: sofaImg,
+    src: "/models/sofa.glb",
     link: "#",
   },
   {
@@ -20,7 +21,7 @@ const products = [
     name: "Walnut Dining Table",
     brand: "Herman Miller",
     price: "$2,450",
-    image: tableImg,
+    src: "/models/classic_table.glb",
     link: "#",
   },
   {
@@ -28,10 +29,36 @@ const products = [
     name: "Ambient Floor Lamp",
     brand: "Flos",
     price: "$450",
-    image: lampImg,
+    src: "/models/titanic_lamp.glb",
     link: "#",
   },
 ];
+
+const ShowcaseModel = ({ src }: { src: string }) => {
+  const { scene } = useGLTF(src);
+  const normalizedModel = useMemo(() => {
+    const clone = scene.clone();
+    
+    // Calculate bounding box
+    const box = new THREE.Box3().setFromObject(clone);
+    const sizeVec = new THREE.Vector3();
+    box.getSize(sizeVec);
+    
+    // Scale so the largest dimension fits roughly in a 3 unit box
+    const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
+    const targetScale = 3 / (maxDim || 1);
+    clone.scale.set(targetScale, targetScale, targetScale);
+    
+    // Center it
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    clone.position.set(-center.x * targetScale, -center.y * targetScale, -center.z * targetScale);
+    
+    return clone;
+  }, [scene]);
+
+  return <primitive object={normalizedModel} />;
+};
 
 const AffiliateShowcase = () => {
   return (
@@ -80,12 +107,19 @@ const AffiliateShowcase = () => {
                 <ExternalLink className="w-5 h-5 text-accent" />
               </div>
               
-              <div className="h-48 w-full flex items-center justify-center mb-8 p-4">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="w-full h-full object-contain filter drop-shadow-lg group-hover:scale-105 transition-transform duration-500" 
-                />
+              <div className="h-64 w-full flex items-center justify-center mb-4 p-0">
+                <div className="w-full h-full cursor-grab active:cursor-grabbing">
+                  <Canvas camera={{ position: [0, 2, 5], fov: 45 }}>
+                    <ambientLight intensity={1.5} />
+                    <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+                    <directionalLight position={[-10, -10, -5]} intensity={0.5} />
+                    <Environment preset="city" />
+                    <Suspense fallback={null}>
+                      <ShowcaseModel src={product.src} />
+                    </Suspense>
+                    <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={3} />
+                  </Canvas>
+                </div>
               </div>
               
               <div className="space-y-2">
