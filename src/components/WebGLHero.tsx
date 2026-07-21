@@ -194,7 +194,7 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
       <div className="relative z-20 text-center max-w-5xl mx-auto px-6 mt-16">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
-          animate={phase !== "chaos" ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
         >
           <p className="text-[11px] uppercase tracking-[0.5em] text-accent mb-8 font-body font-medium">
