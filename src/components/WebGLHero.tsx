@@ -181,7 +181,12 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
     } else if (hasGenerated) {
       setPhase("arranged");
     } else {
+      // Start in chaos, then auto-arrange to demonstrate the app's purpose
       setPhase("chaos");
+      const timer = setTimeout(() => {
+        setPhase("arranged");
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [isGenerating, hasGenerated]);
 
