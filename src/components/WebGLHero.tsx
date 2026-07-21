@@ -68,7 +68,7 @@ const FurniturePlane = ({
         gsap.to(ref.scale, { x: 1, y: 1, z: 1, duration: 2.5, ease: "elastic.out(1, 0.75)", delay: baseDelay });
       });
     }
-  }, [phase, chaosPos, arrangedPos, index]);
+  }, [phase, chaosPos.x, chaosPos.y, chaosPos.r, arrangedPos.x, arrangedPos.y, arrangedPos.r, index]);
 
   // Subtle breathing animation when in chaos or arranged
   useFrame(({ clock }) => {
@@ -104,7 +104,7 @@ const FurniturePlane = ({
 };
 
 // Scene wrapper to handle mouse parallax
-const Scene = ({ phase }: { phase: "chaos" | "arranging" | "arranged" }) => {
+const Scene = ({ phase, layoutData }: { phase: "chaos" | "arranging" | "arranged", layoutData?: any[] }) => {
   const { camera, pointer } = useThree();
   
   useFrame(() => {
@@ -130,17 +130,24 @@ const Scene = ({ phase }: { phase: "chaos" | "arranging" | "arranged" }) => {
 
   return (
     <group>
-      {items.map((item, i) => (
-        <FurniturePlane
-          key={i}
-          index={i}
-          src={item.src}
-          chaosPos={item.chaos}
-          arrangedPos={item.arranged}
-          size={item.size}
-          phase={phase}
-        />
-      ))}
+      {items.map((item, i) => {
+        // Use backend layout data if available, otherwise fallback to hardcoded
+        const arranged = layoutData && layoutData[i] 
+          ? { x: layoutData[i].x - 7.5, y: layoutData[i].y - 10, r: layoutData[i].rotation } 
+          : item.arranged;
+          
+        return (
+          <FurniturePlane
+            key={i}
+            index={i}
+            src={item.src}
+            chaosPos={item.chaos}
+            arrangedPos={arranged}
+            size={item.size}
+            phase={phase}
+          />
+        );
+      })}
     </group>
   );
 };
@@ -149,9 +156,10 @@ interface WebGLHeroProps {
   onGenerate?: () => void;
   isGenerating?: boolean;
   hasGenerated?: boolean;
+  layoutData?: any[];
 }
 
-const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated }) => {
+const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData }) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
   useEffect(() => {
@@ -169,7 +177,7 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
       {/* 3D Canvas Background */}
       <div className="absolute inset-0 z-0 opacity-40">
         <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
-          <Scene phase={phase} />
+          <Scene phase={phase} layoutData={layoutData} />
         </Canvas>
       </div>
 

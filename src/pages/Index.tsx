@@ -17,7 +17,15 @@ const Index = () => {
         room: { width: 15, length: 20 },
         fixedElements: [],
         furniture: [
-          { id: 'sofa-1', type: 'sofa', width: 6, depth: 3 }
+          { id: 'sofa-1', type: 'sofa', width: 6, depth: 3 },
+          { id: 'table-1', type: 'table', width: 3, depth: 3 },
+          { id: 'chair-1', type: 'chair', width: 2, depth: 2 },
+          { id: 'bookshelf-1', type: 'bookshelf', width: 4, depth: 1 },
+          { id: 'bed-1', type: 'bed', width: 5, depth: 7 },
+          { id: 'tv-1', type: 'tv', width: 4, depth: 1 },
+          { id: 'lamp-1', type: 'lamp', width: 1, depth: 1 },
+          { id: 'recliner-1', type: 'chair', width: 3, depth: 3 },
+          { id: 'nightstand-1', type: 'table', width: 2, depth: 2 },
         ],
         vibe: "cozy"
       };
@@ -48,7 +56,8 @@ const Index = () => {
       <WebGLHero 
         onGenerate={handleGenerate} 
         isGenerating={isGenerating} 
-        hasGenerated={!!spaceData} 
+        hasGenerated={!!spaceData}
+        layoutData={spaceData?.layout}
       />
 
       {spaceData && <SpaceDNA spaceData={spaceData} />}
