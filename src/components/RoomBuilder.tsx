@@ -32,6 +32,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   const [width, setWidth] = useState<number>(15);
   const [length, setLength] = useState<number>(20);
   const [vibe, setVibe] = useState<string>("cozy");
+  const [unit, setUnit] = useState<string>("ft");
   
   // Custom items list instead of simple counts
   const [items, setItems] = useState<CustomItem[]>([
@@ -39,6 +40,34 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
     { id: "chair-1", type: "chair", label: "Chair", width: 2, depth: 2 },
     { id: "table-1", type: "table", label: "Table", width: 3, depth: 3 }
   ]);
+
+  const handleUnitChange = (newUnit: string) => {
+    // Simple conversion logic based on base 'ft'
+    const conversions: Record<string, number> = {
+      'ft_to_m': 0.3048, 'm_to_ft': 3.28084,
+      'ft_to_cm': 30.48, 'cm_to_ft': 0.0328084,
+      'ft_to_in': 12, 'in_to_ft': 0.0833333,
+      'm_to_cm': 100, 'cm_to_m': 0.01,
+      'm_to_in': 39.3701, 'in_to_m': 0.0254,
+      'cm_to_in': 0.393701, 'in_to_cm': 2.54
+    };
+
+    if (unit !== newUnit) {
+      const key = `${unit}_to_${newUnit}`;
+      const factor = conversions[key] || 1; // if same or not found
+
+      const convert = (val: number) => Number((val * factor).toFixed(2));
+      
+      setWidth(convert(width));
+      setLength(convert(length));
+      setItems(items.map(item => ({
+        ...item,
+        width: convert(item.width),
+        depth: convert(item.depth)
+      })));
+      setUnit(newUnit);
+    }
+  };
 
   const handleAddItem = (typeDef: typeof FURNITURE_TYPES[0]) => {
     const newItem: CustomItem = {
@@ -75,7 +104,8 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
         width: item.width,
         depth: item.depth
       })),
-      vibe: vibe
+      vibe: vibe,
+      unit: unit
     };
 
     onGenerate(payload);
@@ -115,7 +145,19 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
               
               {/* Step 1: Dimensions */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">1. Space Dimensions (ft)</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">1. Space Dimensions</h3>
+                  <select 
+                    value={unit} 
+                    onChange={(e) => handleUnitChange(e.target.value)}
+                    className="text-xs bg-muted/50 border border-border rounded-md px-2 py-1 text-foreground focus:outline-none"
+                  >
+                    <option value="ft">Feet (ft)</option>
+                    <option value="m">Meters (m)</option>
+                    <option value="cm">Centimeters (cm)</option>
+                    <option value="in">Inches (in)</option>
+                  </select>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs text-muted-foreground font-medium">Width</label>
@@ -179,7 +221,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Width (ft)</label>
+                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Width ({unit})</label>
                           <input 
                             type="number" 
                             step="0.5"
@@ -189,7 +231,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Depth (ft)</label>
+                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Depth ({unit})</label>
                           <input 
                             type="number" 
                             step="0.5"

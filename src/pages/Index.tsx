@@ -80,6 +80,7 @@ const Index = () => {
           activeIndex={activeOptionIndex}
           onSelect={setActiveOptionIndex} 
           room={currentPayload?.room}
+          unit={currentPayload?.unit}
         />
       )}
 

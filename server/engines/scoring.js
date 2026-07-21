@@ -52,10 +52,58 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
       placement.rotation = 0;
     }
     
-    // Bounds check to absolutely prevent out of bounds
+    // Bounds check to absolutely prevent out of bounds initially
     placement.x = Math.max(item.width / 2, Math.min(placement.x, room.width - item.width / 2));
     placement.y = Math.max(item.depth / 2, Math.min(placement.y, room.length - item.depth / 2));
     
+    // Collision Resolution Loop
+    const checkOverlap = (p1, p2) => {
+      // Very simple AABB check (treating all as non-rotated AABB for simplicity in v1)
+      const buffer = 0.5; // half foot buffer between items
+      const p1Left = p1.x - p1.width / 2 - buffer;
+      const p1Right = p1.x + p1.width / 2 + buffer;
+      const p1Top = p1.y - p1.depth / 2 - buffer;
+      const p1Bottom = p1.y + p1.depth / 2 + buffer;
+      
+      const p2Left = p2.x - p2.width / 2;
+      const p2Right = p2.x + p2.width / 2;
+      const p2Top = p2.y - p2.depth / 2;
+      const p2Bottom = p2.y + p2.depth / 2;
+      
+      return !(p1Right <= p2Left || p1Left >= p2Right || p1Bottom <= p2Top || p1Top >= p2Bottom);
+    };
+
+    let hasOverlap = true;
+    let attempts = 0;
+    const maxAttempts = 50; // Prevent infinite loops
+    
+    while (hasOverlap && attempts < maxAttempts) {
+      hasOverlap = false;
+      for (const existing of layout) {
+        if (checkOverlap(placement, existing)) {
+          hasOverlap = true;
+          // Nudge item
+          if (vibe === 'space_saver') {
+             // Nudge along the wall
+             if (variationIndex <= 2) placement.y += 1;
+             else if (variationIndex <= 4) placement.x += 1;
+             else placement.y += 1;
+          } else {
+             // Nudge diagonally outward from center
+             placement.x += (placement.x > room.width / 2 ? 1 : -1);
+             placement.y += (placement.y > room.length / 2 ? 1 : -1);
+          }
+          break; // break inner loop, recheck all existing
+        }
+      }
+      
+      // Re-constrain to bounds after nudging
+      placement.x = Math.max(item.width / 2, Math.min(placement.x, room.width - item.width / 2));
+      placement.y = Math.max(item.depth / 2, Math.min(placement.y, room.length - item.depth / 2));
+      
+      attempts++;
+    }
+
     layout.push(placement);
   }
 

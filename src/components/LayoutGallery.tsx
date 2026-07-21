@@ -16,9 +16,10 @@ interface LayoutGalleryProps {
   activeIndex: number;
   onSelect: (index: number) => void;
   room?: { width: number; length: number };
+  unit?: string;
 }
 
-const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, room }) => {
+const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, room, unit = 'ft' }) => {
   if (!options || options.length === 0) return null;
 
   // Default room if not provided
@@ -79,7 +80,7 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                     </div>
                     <div className="flex flex-col">
                       <span className="text-muted-foreground">Free Area</span>
-                      <span className="text-foreground">{Math.round(clearance.freeSpaceArea)} sq ft</span>
+                      <span className="text-foreground">{Math.round(clearance.freeSpaceArea)} sq {unit}</span>
                     </div>
                   </div>
                 )}
