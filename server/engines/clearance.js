@@ -34,10 +34,23 @@ export function calculateClearance(room, fixedElements, layout) {
     }
   }
 
+  // Calculate area metrics
+  const totalArea = room.width * room.length;
+  let occupiedArea = 0;
+  for (const item of layout) {
+    occupiedArea += item.width * item.depth;
+  }
+  const freeSpaceArea = totalArea - occupiedArea;
+  const spaceSavedPercentage = Math.round((freeSpaceArea / totalArea) * 100);
+
   return {
     walkingComfort: Math.max(0, walkingComfort),
     nightMovement: Math.max(0, nightMovement),
     cleaningAccess: Math.max(0, cleaningAccess),
-    emergencyExit: Math.max(0, emergencyExit)
+    emergencyExit: Math.max(0, emergencyExit),
+    totalArea,
+    occupiedArea,
+    freeSpaceArea,
+    spaceSavedPercentage
   };
 }

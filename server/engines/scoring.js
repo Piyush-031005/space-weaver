@@ -3,45 +3,58 @@
  * Applies layout rules based on the chosen vibe mode before validation.
  */
 
-export function scorePlacement(room, fixedElements, furniture, vibe) {
-  // Mock layout generator. In reality, this runs a constraint-satisfaction loop.
+export function scorePlacement(room, fixedElements, furniture, vibe, variationIndex = 1) {
   const layout = [];
   
-  // Example dummy logic: place items in a row
-  let currentX = room.width / 2;
-  let currentY = room.length / 2;
+  // Use variation index to slightly offset starting positions and logic
+  let currentX = (room.width / 2) + (variationIndex * 0.5) % 2;
+  let currentY = (room.length / 2) + (variationIndex * 0.5) % 2;
   
   for (const item of (furniture || [])) {
     let placement = { ...item };
     
+    // Safety bounds
+    const maxW = room.width - item.width;
+    const maxL = room.length - item.depth;
+    
     if (vibe === 'space_saver') {
-      // Push against walls (dummy logic: set x or y to near 0)
-      placement.x = item.width / 2 + 1; // 1 unit from left wall
-      placement.y = currentY;
-      placement.rotation = 0;
-      currentY -= item.depth + 1; 
+      // Variations of space saver: push against different walls
+      if (variationIndex <= 2) {
+        placement.x = Math.min(item.width / 2 + 1, maxW);
+        placement.y = Math.min(Math.max(currentY, item.depth / 2), maxL);
+      } else if (variationIndex <= 4) {
+        placement.x = Math.min(Math.max(currentX, item.width / 2), maxW);
+        placement.y = Math.min(item.depth / 2 + 1, maxL);
+      } else {
+        placement.x = Math.min(room.width - item.width / 2 - 1, maxW);
+        placement.y = Math.min(Math.max(currentY, item.depth / 2), maxL);
+      }
+      placement.rotation = (variationIndex % 2 === 0) ? Math.PI / 2 : 0;
+      currentY -= item.depth + 1.5;
+      currentX += item.width + 1;
     } 
     else if (vibe === 'cozy') {
-      // Pull into center (dummy logic: cluster around center)
-      placement.x = currentX;
-      placement.y = currentY;
-      placement.rotation = Math.PI / 4; // slight rotation for "cozy" chaos
-      currentX += 2;
+      placement.x = Math.min(Math.max(currentX, item.width / 2), maxW);
+      placement.y = Math.min(Math.max(currentY, item.depth / 2), maxL);
+      placement.rotation = (Math.PI / 4) * (variationIndex % 3);
+      currentX += (variationIndex % 2 === 0) ? -2 : 2;
       currentY -= 2;
     } 
     else if (vibe === 'aesthetic') {
-      // Symmetrical (dummy logic: exact grid)
-      placement.x = currentX;
-      placement.y = currentY;
+      placement.x = Math.min(Math.max(currentX, item.width / 2), maxW);
+      placement.y = Math.min(Math.max(currentY, item.depth / 2), maxL);
       placement.rotation = 0;
-      currentX += item.width + 3; // lots of negative space
+      currentX += item.width + (2 * variationIndex); 
     }
     else {
-      // Default
-      placement.x = currentX;
-      placement.y = currentY;
+      placement.x = Math.min(Math.max(currentX, item.width / 2), maxW);
+      placement.y = Math.min(Math.max(currentY, item.depth / 2), maxL);
       placement.rotation = 0;
     }
+    
+    // Bounds check to absolutely prevent out of bounds
+    placement.x = Math.max(item.width / 2, Math.min(placement.x, room.width - item.width / 2));
+    placement.y = Math.max(item.depth / 2, Math.min(placement.y, room.length - item.depth / 2));
     
     layout.push(placement);
   }

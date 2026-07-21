@@ -15,10 +15,15 @@ interface LayoutGalleryProps {
   options: LayoutOption[];
   activeIndex: number;
   onSelect: (index: number) => void;
+  room?: { width: number; length: number };
 }
 
-const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect }) => {
+const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, room }) => {
   if (!options || options.length === 0) return null;
+
+  // Default room if not provided
+  const rWidth = room?.width || 20;
+  const rLength = room?.length || 20;
 
   return (
     <section className="py-12 bg-muted/20 border-t border-border/50">
@@ -30,61 +35,119 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {options.map((opt, idx) => (
-            <div
-              key={opt.id}
-              onClick={() => onSelect(idx)}
-              className={`relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 p-6 ${
-                activeIndex === idx 
-                  ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
-                  : "border-border/50 bg-background hover:border-primary/50 hover:shadow-sm"
-              }`}
-            >
-              {activeIndex === idx && (
-                <div className="absolute top-4 right-4 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
-                  <Check size={14} strokeWidth={3} />
-                </div>
-              )}
-              
-              <div className="mb-4 inline-flex px-3 py-1 bg-muted rounded-full text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                Option {idx + 1}
-              </div>
-              <h3 className={`text-xl font-bold mb-2 ${activeIndex === idx ? "text-primary" : "text-foreground"}`}>
-                {opt.name}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                {opt.desc}
-              </p>
+        {/* Change grid to handle 6 options nicely */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {options.map((opt, idx) => {
+            const isSelected = activeIndex === idx;
+            const clearance = opt.clearanceScores;
+            const isSpaceSaver = opt.id.includes('space_saver');
 
-              {/* Mini radar visualization (abstract) */}
-              <div className={`h-32 w-full rounded-xl border flex items-center justify-center bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] ${activeIndex === idx ? "border-primary/30" : "border-border/50"}`}>
-                 <div className="grid grid-cols-2 gap-2 p-4 w-full h-full opacity-60">
-                    {/* Abstract dots representing furniture positioning */}
-                    {opt.id === 'space_saver' && (
-                      <>
-                        <div className="w-full h-4 bg-foreground/20 rounded-sm self-start"></div>
-                        <div className="w-4 h-full bg-foreground/20 rounded-sm justify-self-end"></div>
-                      </>
+            return (
+              <div
+                key={opt.id}
+                onClick={() => onSelect(idx)}
+                className={`relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 p-6 flex flex-col h-full ${
+                  isSelected 
+                    ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
+                    : "border-border/50 bg-background hover:border-primary/50 hover:shadow-sm"
+                }`}
+              >
+                {isSelected && (
+                  <div className="absolute top-4 right-4 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
+                    <Check size={14} strokeWidth={3} />
+                  </div>
+                )}
+                
+                <div className="mb-4 inline-flex px-3 py-1 bg-muted rounded-full text-[10px] uppercase font-bold tracking-widest text-muted-foreground self-start">
+                  Option {idx + 1}
+                </div>
+                
+                <h3 className={`text-xl font-bold mb-2 ${isSelected ? "text-primary" : "text-foreground"}`}>
+                  {opt.name}
+                </h3>
+                
+                <p className="text-sm text-muted-foreground mb-4 flex-grow">
+                  {opt.desc}
+                </p>
+
+                {/* Metrics */}
+                {clearance?.spaceSavedPercentage !== undefined && (
+                  <div className="mb-4 flex gap-4 text-xs font-medium">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">Space Saved</span>
+                      <span className="text-accent">{clearance.spaceSavedPercentage}%</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">Free Area</span>
+                      <span className="text-foreground">{Math.round(clearance.freeSpaceArea)} sq ft</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Accurate Blueprint Visualization */}
+                <div className={`h-40 w-full rounded-xl border flex items-center justify-center overflow-hidden bg-background ${isSelected ? "border-primary/30" : "border-border/50"}`}>
+                  <svg 
+                    viewBox={`0 0 ${rWidth} ${rLength}`} 
+                    className="w-full h-full opacity-80 p-2 drop-shadow-sm"
+                    preserveAspectRatio="xMidYMid meet"
+                  >
+                    {/* Background Grid */}
+                    <pattern id={`grid-${opt.id}`} width="2" height="2" patternUnits="userSpaceOnUse">
+                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="currentColor" strokeWidth="0.1" className="text-muted/30" />
+                    </pattern>
+                    <rect width={rWidth} height={rLength} fill={`url(#grid-${opt.id})`} rx="1" />
+
+                    {/* Highlight Free Space area for Space Saver vibes */}
+                    {isSpaceSaver && (
+                      <rect 
+                        x={2} 
+                        y={2} 
+                        width={rWidth - 4} 
+                        height={rLength - 4} 
+                        fill="rgba(239, 68, 68, 0.1)" // Light red
+                        stroke="rgba(239, 68, 68, 0.3)"
+                        strokeWidth="0.2"
+                        strokeDasharray="0.5 0.5"
+                        rx="0.5"
+                      />
                     )}
-                    {opt.id === 'cozy' && (
-                      <>
-                        <div className="w-8 h-8 bg-foreground/30 rounded-md place-self-center"></div>
-                        <div className="w-6 h-6 bg-foreground/20 rounded-full place-self-center"></div>
-                        <div className="w-10 h-4 bg-foreground/20 rounded-sm place-self-center"></div>
-                      </>
-                    )}
-                    {opt.id === 'aesthetic' && (
-                      <>
-                        <div className="w-6 h-6 bg-foreground/20 rounded-sm place-self-center"></div>
-                        <div className="w-8 h-4 bg-foreground/30 rounded-sm justify-self-center mt-4"></div>
-                        <div className="w-6 h-6 bg-foreground/20 rounded-sm place-self-center"></div>
-                      </>
-                    )}
-                 </div>
+
+                    {/* Furniture Layout */}
+                    {opt.layout.map((item, i) => (
+                      <g 
+                        key={`${item.id}-${i}`}
+                        transform={`translate(${item.x}, ${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}
+                      >
+                        <rect 
+                          x={-item.width / 2} 
+                          y={-item.depth / 2} 
+                          width={item.width} 
+                          height={item.depth} 
+                          fill="currentColor" 
+                          className={isSelected ? "text-primary/40" : "text-foreground/30"}
+                          stroke="currentColor"
+                          strokeWidth="0.1"
+                          rx="0.2"
+                        />
+                        {/* Type Label */}
+                        <text 
+                          x="0" 
+                          y="0" 
+                          fontSize={Math.min(item.width, item.depth) * 0.3} 
+                          fill="currentColor" 
+                          className="text-foreground font-semibold"
+                          textAnchor="middle" 
+                          alignmentBaseline="middle"
+                        >
+                          {item.type}
+                        </text>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

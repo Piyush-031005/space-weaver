@@ -79,6 +79,7 @@ const Index = () => {
           options={spaceData.options} 
           activeIndex={activeOptionIndex}
           onSelect={setActiveOptionIndex} 
+          room={currentPayload?.room}
         />
       )}
 

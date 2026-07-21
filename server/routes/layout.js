@@ -9,19 +9,20 @@ const router = express.Router();
 
 router.post('/generate-layout', async (req, res) => {
   try {
-    const { room, fixedElements, furniture } = req.body;
+    const { room, fixedElements, furniture, vibe } = req.body;
 
-    const vibes = [
-      { id: 'space_saver', name: 'Efficiency (Space Saver)', desc: 'Maximizes open floor space in the center.' },
-      { id: 'cozy', name: 'Intimacy (Cozy & Comfy)', desc: 'Pulls seating together for conversation.' },
-      { id: 'aesthetic', name: 'Gallery (Aesthetic)', desc: 'Symmetrical alignment with breathing room.' }
-    ];
+    const vibeDefinitions = {
+      space_saver: { id: 'space_saver', name: 'Efficiency (Space Saver)', baseDesc: 'Maximizes open floor space in the center.' },
+      cozy: { id: 'cozy', name: 'Intimacy (Cozy & Comfy)', baseDesc: 'Pulls seating together for conversation.' },
+      aesthetic: { id: 'aesthetic', name: 'Gallery (Aesthetic)', baseDesc: 'Symmetrical alignment with breathing room.' }
+    };
 
+    const activeVibe = vibeDefinitions[vibe] || vibeDefinitions['space_saver'];
     const options = [];
 
-    for (const vibeOption of vibes) {
-      // 1. Scoring Engine: Generate initial placement based on vibe mode
-      const layout = scorePlacement(room, fixedElements, furniture, vibeOption.id);
+    for (let i = 1; i <= 6; i++) {
+      // 1. Scoring Engine: Generate initial placement based on vibe mode AND variation
+      const layout = scorePlacement(room, fixedElements, furniture, activeVibe.id, i);
 
       // 2. Collision Engine: Validate overlaps
       const collisions = checkCollisions(layout);
@@ -33,13 +34,12 @@ router.post('/generate-layout', async (req, res) => {
       const genome = generateGenome(clearanceScores);
       
       // 5. Critic Engine: Call Claude API to generate witty roast lines based on metrics
-      // (Using await in loop is fine here as it's mock API currently)
       const roast = await generateRoast(clearanceScores, genome, collisions);
 
       options.push({
-        id: vibeOption.id,
-        name: vibeOption.name,
-        desc: vibeOption.desc,
+        id: `${activeVibe.id}_var${i}`,
+        name: `${activeVibe.name} - Var ${i}`,
+        desc: `${activeVibe.baseDesc} (Configuration ${i})`,
         layout,
         clearanceScores,
         genome,
@@ -49,7 +49,7 @@ router.post('/generate-layout', async (req, res) => {
     }
 
     res.json({
-      options // Return the array of 3 generated options
+      options // Return the array of 6 generated variations
     });
   } catch (error) {
     console.error("Layout generation error:", error);
