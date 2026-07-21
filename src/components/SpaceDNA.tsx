@@ -2,16 +2,22 @@ import { motion } from "framer-motion";
 import { Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const scores = [
-  { label: "Harmony", value: 82 },
-  { label: "Flow", value: 93 },
-  { label: "Light", value: 77 },
-  { label: "Focus", value: 65 },
-  { label: "Comfort", value: 91 },
-  { label: "Warmth", value: 89 },
-];
+interface SpaceDNAProps {
+  spaceData: any;
+}
 
-const SpaceDNA = () => {
+const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData }) => {
+  if (!spaceData) return null;
+
+  const { genome, roast } = spaceData;
+  const scoresArray = [
+    { label: "Flow", value: genome.scores.flow },
+    { label: "Light", value: genome.scores.light },
+    { label: "Calm", value: genome.scores.calm },
+    { label: "Focus", value: genome.scores.focus },
+    { label: "Warmth", value: genome.scores.warmth },
+    { label: "Privacy", value: genome.scores.privacy },
+  ];
   return (
     <section id="spacedna" className="section-padding bg-background relative overflow-hidden">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 items-center">
@@ -27,22 +33,27 @@ const SpaceDNA = () => {
             <p className="text-[10px] uppercase tracking-[0.5em] text-accent mb-6 font-body font-medium">
               Space Identity
             </p>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-semibold text-foreground leading-[1] tracking-tight">
-              Every Room Has A<br />
-              <span className="italic font-normal hero-gradient-text">Fingerprint</span>
+            <h2 className="text-4xl md:text-5xl font-display font-bold leading-tight">
+              Your space behaves like <br/>
+              <span className="italic font-normal text-accent">{genome.archetype}</span>
             </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">
+              {genome.tagline}
+            </p>
+            
+            {/* AI ROAST CRITIC SECTION */}
+            <div className="mt-8 p-6 bg-muted/30 rounded-2xl border border-border/50">
+              <h3 className="text-sm font-semibold text-accent mb-4 uppercase tracking-wider">AI Interior Critic Says:</h3>
+              <ul className="space-y-3">
+                {roast.map((line: string, i: number) => (
+                  <li key={i} className="text-muted-foreground flex items-start gap-2">
+                    <span className="text-accent mt-1">{"→"}</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </motion.div>
-          
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-muted-foreground font-body leading-relaxed max-w-lg"
-          >
-            Instead of just arranging furniture, SpaceWeaver analyzes the spatial geometry, 
-            natural light paths, and ergonomic flow to generate your room's unique Space DNA.
-          </motion.p>
         </div>
 
         {/* Right Side - The DNA Card */}
@@ -86,7 +97,7 @@ const SpaceDNA = () => {
 
               {/* Scores Grid */}
               <div className="w-full grid grid-cols-2 gap-x-6 gap-y-4 mb-10">
-                {scores.map((score, i) => (
+                {scoresArray.map((score, i) => (
                   <div key={i} className="flex flex-col">
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{score.label}</span>

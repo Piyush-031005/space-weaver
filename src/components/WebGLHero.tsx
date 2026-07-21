@@ -145,23 +145,24 @@ const Scene = ({ phase }: { phase: "chaos" | "arranging" | "arranged" }) => {
   );
 };
 
-const WebGLHero = () => {
+interface WebGLHeroProps {
+  onGenerate?: () => void;
+  isGenerating?: boolean;
+  hasGenerated?: boolean;
+}
+
+const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated }) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
   useEffect(() => {
-    const sequence = async () => {
-      // Chaos for 2.5s
-      await new Promise((r) => setTimeout(r, 2500));
-      
-      // Anticipation
+    if (isGenerating) {
       setPhase("arranging");
-      await new Promise((r) => setTimeout(r, 400));
-      
-      // Arrange
+    } else if (hasGenerated) {
       setPhase("arranged");
-    };
-    sequence();
-  }, []);
+    } else {
+      setPhase("chaos");
+    }
+  }, [isGenerating, hasGenerated]);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
@@ -208,9 +209,14 @@ const WebGLHero = () => {
             Your space is a living intelligence that learns, adapts, and evolves with you. Watch chaos turn into perfect harmony.
           </p>
           <div className="flex flex-wrap gap-6 justify-center">
-            <Button size="lg" className="rounded-full px-12 py-7 text-sm font-medium shadow-hero hover:scale-[1.02] transition-transform duration-300 bg-primary text-primary-foreground">
-              Generate Space DNA
-            </Button>
+            <Button 
+            size="lg" 
+            className="rounded-full px-8 h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-hero"
+            onClick={onGenerate}
+            disabled={isGenerating || hasGenerated}
+          >
+            {isGenerating ? "Analyzing Space..." : hasGenerated ? "Space Optimized" : "Generate Space DNA"}
+          </Button>
             <Button variant="outline" size="lg" className="rounded-full px-12 py-7 text-sm font-medium border-border/50 hover:bg-accent/5 hover:scale-[1.02] transition-transform duration-300">
               See How It Works
             </Button>
