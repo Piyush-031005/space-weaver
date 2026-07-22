@@ -48,6 +48,15 @@ router.post('/generate-layout', async (req, res) => {
       });
     }
 
+    // Sort options by spaceSavedPercentage descending
+    options.sort((a, b) => b.clearanceScores.spaceSavedPercentage - a.clearanceScores.spaceSavedPercentage);
+
+    // Reassign names to match the sorted order
+    options.forEach((opt, idx) => {
+      opt.name = `${activeVibe.name} - Var ${idx + 1}`;
+      opt.desc = `${activeVibe.baseDesc} (Configuration ${idx + 1})`;
+    });
+
     res.json({
       options // Return the array of 6 generated variations
     });

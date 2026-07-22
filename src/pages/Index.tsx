@@ -1,15 +1,13 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import WebGLHero from "@/components/WebGLHero";
-import SpaceDNA from "@/components/SpaceDNA";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
 import Footer from "@/components/Footer";
 import RoomBuilder from "@/components/RoomBuilder";
-import LayoutGallery from "@/components/LayoutGallery";
 
 const Index = () => {
-  const [spaceData, setSpaceData] = useState<any>(null);
-  const [activeOptionIndex, setActiveOptionIndex] = useState(0);
+  const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   
@@ -51,9 +49,8 @@ const Index = () => {
       
       // Simulate slight delay for cinematic effect
       setTimeout(() => {
-        setSpaceData(data); // data now contains { options: [...] }
-        setActiveOptionIndex(0); // Reset to first option
         setIsGenerating(false);
+        navigate('/results', { state: { data, payloadToUse } });
       }, 1500);
 
     } catch (error) {
@@ -62,29 +59,16 @@ const Index = () => {
     }
   };
 
-  const activeOption = spaceData?.options?.[activeOptionIndex];
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar onGetStarted={() => setIsBuilderOpen(true)} />
       <WebGLHero 
         onGenerate={() => setIsBuilderOpen(true)} // Open builder instead of auto-generating
         isGenerating={isGenerating} 
-        hasGenerated={!!activeOption}
-        layoutData={activeOption?.layout}
+        hasGenerated={false}
+        layoutData={undefined}
       />
 
-      {spaceData?.options && (
-        <LayoutGallery 
-          options={spaceData.options} 
-          activeIndex={activeOptionIndex}
-          onSelect={setActiveOptionIndex} 
-          room={currentPayload?.room}
-          unit={currentPayload?.unit}
-        />
-      )}
-
-      {activeOption && <SpaceDNA spaceData={activeOption} />}
       <AffiliateShowcase />
       <Footer />
       

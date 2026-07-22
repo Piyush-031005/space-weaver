@@ -34,13 +34,32 @@ export function calculateClearance(room, fixedElements, layout) {
     }
   }
 
-  // Calculate area metrics
+  // Calculate area metrics (True Contiguous Free Space)
   const totalArea = room.width * room.length;
-  let occupiedArea = 0;
-  for (const item of layout) {
-    occupiedArea += item.width * item.depth;
+  let minX = room.width, maxX = 0, minY = room.length, maxY = 0;
+  
+  if (layout.length === 0) {
+    minX = 0; maxX = 0; minY = 0; maxY = 0;
+  } else {
+    for (const item of layout) {
+      const pW = (Math.abs(item.rotation) === Math.PI / 2) ? item.depth : item.width;
+      const pD = (Math.abs(item.rotation) === Math.PI / 2) ? item.width : item.depth;
+      
+      minX = Math.min(minX, item.x - pW / 2);
+      maxX = Math.max(maxX, item.x + pW / 2);
+      minY = Math.min(minY, item.y - pD / 2);
+      maxY = Math.max(maxY, item.y + pD / 2);
+    }
   }
-  const freeSpaceArea = totalArea - occupiedArea;
+
+  // The cluster area represents the block taken up by the furniture arrangement
+  const clusterWidth = Math.max(0, maxX - minX);
+  const clusterDepth = Math.max(0, maxY - minY);
+  const clusterArea = clusterWidth * clusterDepth;
+  
+  // The true contiguous free space is the room area minus the footprint of the cluster
+  // (A tighter cluster yields a smaller clusterArea, resulting in higher free space!)
+  const freeSpaceArea = totalArea - clusterArea;
   const spaceSavedPercentage = Math.round((freeSpaceArea / totalArea) * 100);
 
   return {
