@@ -170,9 +170,10 @@ interface WebGLHeroProps {
   isGenerating?: boolean;
   hasGenerated?: boolean;
   layoutData?: any[];
+  showText?: boolean;
 }
 
-const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData }) => {
+const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData, showText = true }) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
   useEffect(() => {
@@ -181,12 +182,19 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
     } else if (hasGenerated) {
       setPhase("arranged");
     } else {
-      // Start in chaos, then auto-arrange to demonstrate the app's purpose
       setPhase("chaos");
-      const timer = setTimeout(() => {
-        setPhase("arranged");
-      }, 1500);
-      return () => clearTimeout(timer);
+      
+      const handleScroll = () => {
+        if (window.scrollY > 50) {
+          setPhase("arranged");
+          window.removeEventListener("scroll", handleScroll);
+        }
+      };
+
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+      };
     }
   }, [isGenerating, hasGenerated]);
 
@@ -219,35 +227,37 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
       </motion.div>
 
       {/* Main Content */}
-      <div className="relative z-20 text-center max-w-5xl mx-auto px-6 mt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <p className="text-[11px] uppercase tracking-[0.5em] text-accent mb-8 font-body font-medium">
-            Intelligent Space Design
-          </p>
-          <h1 className="text-5xl md:text-7xl lg:text-[7rem] font-display font-semibold text-foreground leading-[1] mb-10 tracking-tight drop-shadow-xl">
-            Design Space
-            <br />
-            <span className="hero-gradient-text italic font-medium">That Thinks.</span>
-          </h1>
-          <p className="text-base md:text-lg text-muted-foreground/80 max-w-xl mx-auto mb-14 font-body leading-relaxed font-light">
-            Your space is a living intelligence that learns, adapts, and evolves with you. Watch chaos turn into perfect harmony.
-          </p>
-          <div className="flex flex-wrap gap-6 justify-center">
-            <Button 
-            size="lg" 
-            className="rounded-full px-8 h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-hero"
-            onClick={onGenerate}
-            disabled={isGenerating}
+      {showText && (
+        <div className="relative z-20 text-center max-w-5xl mx-auto px-6 mt-16">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            {isGenerating ? "Analyzing Space..." : hasGenerated ? "Configure Space" : "Get Started"}
-          </Button>
-          </div>
-        </motion.div>
-      </div>
+            <p className="text-[11px] uppercase tracking-[0.5em] text-accent mb-8 font-body font-medium">
+              Intelligent Space Design
+            </p>
+            <h1 className="text-5xl md:text-7xl lg:text-[7rem] font-display font-semibold text-foreground leading-[1] mb-10 tracking-tight drop-shadow-xl">
+              Design Space
+              <br />
+              <span className="hero-gradient-text italic font-medium">That Thinks.</span>
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground/80 max-w-xl mx-auto mb-14 font-body leading-relaxed font-light">
+              Your space is a living intelligence that learns, adapts, and evolves with you. Watch chaos turn into perfect harmony.
+            </p>
+            <div className="flex flex-wrap gap-6 justify-center">
+              <Button 
+                size="lg" 
+                className="rounded-full px-8 h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-hero"
+                onClick={onGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? "Analyzing Space..." : hasGenerated ? "Configure Space" : "Get Started"}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 };

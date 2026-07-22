@@ -86,32 +86,20 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                 )}
 
                 {/* Accurate Blueprint Visualization */}
-                <div className={`h-40 w-full rounded-xl border flex items-center justify-center overflow-hidden bg-background ${isSelected ? "border-primary/30" : "border-border/50"}`}>
+                <div className={`h-40 w-full rounded-xl border flex items-center justify-center overflow-hidden bg-[#1e293b] ${isSelected ? "border-primary shadow-md" : "border-border/50"}`}>
                   <svg 
-                    viewBox={`0 0 ${rWidth} ${rLength}`} 
-                    className="w-full h-full opacity-80 p-2 drop-shadow-sm"
+                    viewBox={`-1 -1 ${rWidth + 2} ${rLength + 2}`} 
+                    className="w-full h-full p-2 drop-shadow-sm"
                     preserveAspectRatio="xMidYMid meet"
                   >
                     {/* Background Grid */}
                     <pattern id={`grid-${opt.id}`} width="2" height="2" patternUnits="userSpaceOnUse">
-                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="currentColor" strokeWidth="0.1" className="text-muted/30" />
+                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.1" />
                     </pattern>
-                    <rect width={rWidth} height={rLength} fill={`url(#grid-${opt.id})`} rx="1" />
-
-                    {/* Highlight Free Space area for Space Saver vibes */}
-                    {isSpaceSaver && (
-                      <rect 
-                        x={2} 
-                        y={2} 
-                        width={rWidth - 4} 
-                        height={rLength - 4} 
-                        fill="rgba(239, 68, 68, 0.1)" // Light red
-                        stroke="rgba(239, 68, 68, 0.3)"
-                        strokeWidth="0.2"
-                        strokeDasharray="0.5 0.5"
-                        rx="0.5"
-                      />
-                    )}
+                    <rect width={rWidth} height={rLength} fill={`url(#grid-${opt.id})`} />
+                    
+                    {/* True Room Boundary */}
+                    <rect width={rWidth} height={rLength} fill="none" stroke="rgba(255, 255, 255, 0.8)" strokeWidth="0.4" />
 
                     {/* Furniture Layout */}
                     {opt.layout.map((item, i) => (
@@ -119,24 +107,22 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                         key={`${item.id}-${i}`}
                         transform={`translate(${item.x}, ${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}
                       >
-                        <rect 
+                          <rect 
                           x={-item.width / 2} 
                           y={-item.depth / 2} 
                           width={item.width} 
                           height={item.depth} 
-                          fill="currentColor" 
-                          className={isSelected ? "text-primary/40" : "text-foreground/30"}
-                          stroke="currentColor"
-                          strokeWidth="0.1"
-                          rx="0.2"
+                          fill="rgba(255, 255, 255, 0.2)" 
+                          stroke="rgba(255, 255, 255, 0.9)"
+                          strokeWidth="0.2"
                         />
                         {/* Type Label */}
                         <text 
                           x="0" 
                           y="0" 
                           fontSize={Math.min(item.width, item.depth) * 0.3} 
-                          fill="currentColor" 
-                          className="text-foreground font-semibold"
+                          fill="white" 
+                          className="font-semibold"
                           textAnchor="middle" 
                           alignmentBaseline="middle"
                         >

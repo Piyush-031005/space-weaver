@@ -50,7 +50,11 @@ const Index = () => {
       // Simulate slight delay for cinematic effect
       setTimeout(() => {
         setIsGenerating(false);
-        navigate('/results', { state: { data, payloadToUse } });
+        if (data && data.options) {
+          navigate('/results', { state: { data, payloadToUse } });
+        } else {
+          console.error("No options returned from API:", data);
+        }
       }, 1500);
 
     } catch (error) {

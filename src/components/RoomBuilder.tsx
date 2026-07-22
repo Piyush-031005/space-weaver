@@ -34,6 +34,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   const [length, setLength] = useState<number>(20);
   const [vibe, setVibe] = useState<string>("cozy");
   const [unit, setUnit] = useState<string>("ft");
+  const [error, setError] = useState<string | null>(null);
   
   // Custom items list instead of simple counts
   const [items, setItems] = useState<CustomItem[]>([
@@ -107,6 +108,16 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   const handleGenerateClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setError(null);
+    
+    // Calculate total areas
+    const roomArea = width * length;
+    const totalFurnitureArea = items.reduce((acc, item) => acc + (item.width * item.depth * item.quantity), 0);
+    
+    if (totalFurnitureArea > roomArea) {
+      setError(`Room is full! You need ${totalFurnitureArea} ${unit}² but only have ${roomArea} ${unit}².`);
+      return;
+    }
     
     // Explicitly create payload without any Event objects
     const payload = {
@@ -319,12 +330,16 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
 
             {/* Footer Action - fixed at bottom */}
             <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-border/50 bg-background/95 backdrop-blur-md">
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-semibold">
+                  {error}
+                </div>
+              )}
               <Button 
                 onClick={handleGenerateClick}
+                className="w-full h-12 text-base font-semibold shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all rounded-xl"
                 disabled={isGenerating}
-                className="w-full h-14 text-lg rounded-xl shadow-hero bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isGenerating ? "Analyzing & Generating..." : "Generate Spatial Layout"}
+              >  {isGenerating ? "Analyzing & Generating..." : "Generate Spatial Layout"}
               </Button>
             </div>
           </motion.div>
