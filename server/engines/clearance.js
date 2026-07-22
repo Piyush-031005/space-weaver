@@ -42,8 +42,9 @@ export function calculateClearance(room, fixedElements, layout) {
     minX = 0; maxX = 0; minY = 0; maxY = 0;
   } else {
     for (const item of layout) {
-      const pW = (Math.abs(item.rotation) === Math.PI / 2) ? item.depth : item.width;
-      const pD = (Math.abs(item.rotation) === Math.PI / 2) ? item.width : item.depth;
+      const theta = item.rotation || 0;
+      const pW = Math.abs(item.width * Math.cos(theta)) + Math.abs(item.depth * Math.sin(theta));
+      const pD = Math.abs(item.width * Math.sin(theta)) + Math.abs(item.depth * Math.cos(theta));
       
       minX = Math.min(minX, item.x - pW / 2);
       maxX = Math.max(maxX, item.x + pW / 2);
@@ -68,7 +69,7 @@ export function calculateClearance(room, fixedElements, layout) {
     cleaningAccess: Math.max(0, cleaningAccess),
     emergencyExit: Math.max(0, emergencyExit),
     totalArea,
-    occupiedArea,
+    occupiedArea: clusterArea,
     freeSpaceArea,
     spaceSavedPercentage
   };

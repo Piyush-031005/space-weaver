@@ -5,34 +5,38 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 18px; /* Zooms in the entire website for a premium readable scale */
+  }
+
   :root {
-    --background: 48 100% 85%;
-    --foreground: 173 97% 12%;
+    --background: 48 100% 88%; /* Very light warm beige */
+    --foreground: 220 50% 15%; /* Deep classic blue for text */
 
-    --card: 48 90% 88%;
-    --card-foreground: 173 97% 12%;
+    --card: 48 90% 90%;
+    --card-foreground: 220 50% 15%;
 
-    --popover: 48 100% 85%;
-    --popover-foreground: 173 97% 12%;
+    --popover: 48 100% 88%;
+    --popover-foreground: 220 50% 15%;
 
-    --primary: 173 97% 12%;
-    --primary-foreground: 48 100% 85%;
+    --primary: 215 65% 25%; /* Classic aesthetic blue */
+    --primary-foreground: 48 100% 90%;
 
-    --secondary: 173 40% 25%;
-    --secondary-foreground: 48 100% 85%;
+    --secondary: 215 40% 35%;
+    --secondary-foreground: 48 100% 90%;
 
     --muted: 48 60% 80%;
-    --muted-foreground: 173 30% 30%;
+    --muted-foreground: 215 30% 30%;
 
-    --accent: 173 80% 20%;
-    --accent-foreground: 48 100% 85%;
+    --accent: 215 80% 30%;
+    --accent-foreground: 48 100% 90%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 173 40% 25%;
-    --input: 173 40% 25%;
-    --ring: 173 97% 12%;
+    --border: 215 40% 25%;
+    --input: 215 40% 25%;
+    --ring: 215 65% 25%;
 
     --radius: 0.75rem;
 
@@ -40,17 +44,17 @@
     --warm-beige: 34 22% 78%;
     --warm-tan: 20 55% 40%;
     --warm-brown: 22 42% 24%;
-    --warm-dark: 18 50% 14%;
-    --warm-espresso: 16 60% 6%;
+    --warm-dark: 220 50% 15%;
+    --warm-espresso: 220 65% 10%;
 
-    --sidebar-background: 38 28% 94%;
-    --sidebar-foreground: 20 25% 10%;
-    --sidebar-primary: 22 42% 24%;
+    --sidebar-background: 48 100% 85%;
+    --sidebar-foreground: 220 50% 15%;
+    --sidebar-primary: 215 65% 25%;
     --sidebar-primary-foreground: 40 33% 97%;
-    --sidebar-accent: 34 22% 78%;
-    --sidebar-accent-foreground: 20 25% 10%;
-    --sidebar-border: 34 18% 82%;
-    --sidebar-ring: 22 42% 24%;
+    --sidebar-accent: 48 90% 80%;
+    --sidebar-accent-foreground: 220 50% 15%;
+    --sidebar-border: 215 40% 25%;
+    --sidebar-ring: 215 65% 25%;
 
     --font-display: 'Playfair Display', 'Cormorant Garamond', serif;
     --font-body: 'Inter', sans-serif;

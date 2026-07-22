@@ -26,6 +26,7 @@ interface CustomItem {
   label: string;
   width: number;
   depth: number;
+  quantity: number;
 }
 
 const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, isGenerating }) => {
@@ -36,9 +37,9 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   
   // Custom items list instead of simple counts
   const [items, setItems] = useState<CustomItem[]>([
-    { id: "sofa-1", type: "sofa", label: "Sofa", width: 6, depth: 3 },
-    { id: "chair-1", type: "chair", label: "Chair", width: 2, depth: 2 },
-    { id: "table-1", type: "table", label: "Table", width: 3, depth: 3 }
+    { id: "sofa-1", type: "sofa", label: "Sofa", width: 6, depth: 3, quantity: 1 },
+    { id: "chair-1", type: "chair", label: "Chair", width: 2, depth: 2, quantity: 1 },
+    { id: "table-1", type: "table", label: "Table", width: 3, depth: 3, quantity: 1 }
   ]);
 
   const handleUnitChange = (newUnit: string) => {
@@ -70,21 +71,34 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   };
 
   const handleAddItem = (typeDef: typeof FURNITURE_TYPES[0]) => {
-    const newItem: CustomItem = {
-      id: `${typeDef.type}-${Date.now()}`,
-      type: typeDef.type,
-      label: typeDef.label,
-      width: typeDef.defaultWidth,
-      depth: typeDef.defaultDepth
-    };
-    setItems([...items, newItem]);
+    const existingIndex = items.findIndex(item => item.type === typeDef.type);
+    
+    if (existingIndex >= 0) {
+      const newItems = [...items];
+      newItems[existingIndex].quantity += 1;
+      setItems(newItems);
+    } else {
+      const newItem: CustomItem = {
+        id: `${typeDef.type}-${Date.now()}`,
+        type: typeDef.type,
+        label: typeDef.label,
+        width: typeDef.defaultWidth,
+        depth: typeDef.defaultDepth,
+        quantity: 1
+      };
+      setItems([...items, newItem]);
+    }
   };
 
   const handleRemoveItem = (id: string) => {
     setItems(items.filter(item => item.id !== id));
   };
 
-  const handleUpdateItem = (id: string, field: "width" | "depth", value: number) => {
+  const handleUpdateItem = (id: string, field: "width" | "depth" | "quantity", value: number) => {
+    if (field === "quantity" && value <= 0) {
+      handleRemoveItem(id);
+      return;
+    }
     setItems(items.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ));
@@ -98,12 +112,14 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
     const payload = {
       room: { width, length },
       fixedElements: [],
-      furniture: items.map(item => ({
-        id: item.id,
-        type: item.type,
-        width: item.width,
-        depth: item.depth
-      })),
+      furniture: items.flatMap(item => 
+        Array.from({ length: item.quantity }).map((_, i) => ({
+          id: `${item.id}-${i}`,
+          type: item.type,
+          width: item.width,
+          depth: item.depth
+        }))
+      ),
       vibe: vibe,
       unit: unit
     };
@@ -215,8 +231,23 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                         <Trash2 size={16} />
                       </button>
                       
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-between gap-2 mb-3">
                         <span className="font-semibold text-foreground text-sm">{item.label}</span>
+                        <div className="flex items-center gap-2 bg-background border border-border/50 rounded-md p-1 mr-8">
+                          <button 
+                            onClick={() => handleUpdateItem(item.id, "quantity", item.quantity - 1)}
+                            className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="text-xs font-semibold w-4 text-center">{item.quantity}</span>
+                          <button 
+                            onClick={() => handleUpdateItem(item.id, "quantity", item.quantity + 1)}
+                            className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-3">

@@ -53,8 +53,9 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
     }
     
     // Bounds check to absolutely prevent out of bounds initially
-    const pWidth = (Math.abs(placement.rotation) === Math.PI / 2) ? item.depth : item.width;
-    const pDepth = (Math.abs(placement.rotation) === Math.PI / 2) ? item.width : item.depth;
+    const theta = placement.rotation || 0;
+    const pWidth = Math.abs(item.width * Math.cos(theta)) + Math.abs(item.depth * Math.sin(theta));
+    const pDepth = Math.abs(item.width * Math.sin(theta)) + Math.abs(item.depth * Math.cos(theta));
 
     placement.x = Math.max(pWidth / 2, Math.min(placement.x, room.width - pWidth / 2));
     placement.y = Math.max(pDepth / 2, Math.min(placement.y, room.length - pDepth / 2));
@@ -63,11 +64,21 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
     const checkOverlap = (p1, p2) => {
       const buffer = 0.5;
       
-      const p1W = (Math.abs(p1.rotation) === Math.PI / 2) ? p1.depth : p1.width;
-      const p1D = (Math.abs(p1.rotation) === Math.PI / 2) ? p1.width : p1.depth;
+      const getAABB = (p) => {
+        const theta = p.rotation || 0;
+        const w = Math.abs(p.width * Math.cos(theta)) + Math.abs(p.depth * Math.sin(theta));
+        const d = Math.abs(p.width * Math.sin(theta)) + Math.abs(p.depth * Math.cos(theta));
+        return { w, d };
+      };
+
+      const p1Bounds = getAABB(p1);
+      const p2Bounds = getAABB(p2);
+
+      const p1W = p1Bounds.w;
+      const p1D = p1Bounds.d;
       
-      const p2W = (Math.abs(p2.rotation) === Math.PI / 2) ? p2.depth : p2.width;
-      const p2D = (Math.abs(p2.rotation) === Math.PI / 2) ? p2.width : p2.depth;
+      const p2W = p2Bounds.w;
+      const p2D = p2Bounds.d;
 
       const p1Left = p1.x - p1W / 2 - buffer;
       const p1Right = p1.x + p1W / 2 + buffer;
