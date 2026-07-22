@@ -20,7 +20,7 @@ router.post('/generate-layout', async (req, res) => {
     const activeVibe = vibeDefinitions[vibe] || vibeDefinitions['space_saver'];
     const options = [];
 
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 9; i++) {
       // 1. Scoring Engine: Generate initial placement based on vibe mode AND variation
       const layout = scorePlacement(room, fixedElements, furniture, activeVibe.id, i);
 
@@ -62,7 +62,7 @@ router.post('/generate-layout', async (req, res) => {
     });
   } catch (error) {
     console.error("Layout generation error:", error);
-    res.status(500).json({ error: "Failed to generate layout" });
+    res.status(500).json({ error: "Failed to generate layout", stack: error.stack });
   }
 });
 

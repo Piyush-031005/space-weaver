@@ -36,7 +36,7 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
     else if (vibe === 'cozy') {
       placement.x = Math.min(Math.max(currentX, item.width / 2), maxW);
       placement.y = Math.min(Math.max(currentY, item.depth / 2), maxL);
-      placement.rotation = (Math.PI / 4) * (variationIndex % 3);
+      placement.rotation = (variationIndex % 2 === 0) ? Math.PI / 2 : 0; // Strictly orthogonal
       currentX += (variationIndex % 2 === 0) ? -2 : 2;
       currentY -= 2;
     } 
