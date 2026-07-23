@@ -18,7 +18,34 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
     const maxW = room.width - item.width;
     const maxL = room.length - item.depth;
     
-    if (vibe === 'space_saver') {
+    const isWallBound = ['bookshelf', 'bed', 'tv'].includes((item.type || '').toLowerCase());
+
+    if (isWallBound) {
+      // Wall 0: Top, Wall 1: Right, Wall 2: Bottom, Wall 3: Left
+      const wallEdge = (variationIndex + layout.length) % 4;
+      
+      if (wallEdge === 0) {
+        // Top wall
+        placement.x = Math.max(item.width/2, Math.min(currentX, room.width - item.width/2));
+        placement.y = item.depth / 2;
+        placement.rotation = 0; // Facing down/interior
+      } else if (wallEdge === 1) {
+        // Right wall
+        placement.x = room.width - item.depth / 2;
+        placement.y = Math.max(item.width/2, Math.min(currentY, room.length - item.width/2));
+        placement.rotation = -Math.PI / 2; // Facing left/interior
+      } else if (wallEdge === 2) {
+        // Bottom wall
+        placement.x = Math.max(item.width/2, Math.min(currentX, room.width - item.width/2));
+        placement.y = room.length - item.depth / 2;
+        placement.rotation = Math.PI; // Facing up/interior
+      } else {
+        // Left wall
+        placement.x = item.depth / 2;
+        placement.y = Math.max(item.width/2, Math.min(currentY, room.length - item.width/2));
+        placement.rotation = Math.PI / 2; // Facing right/interior
+      }
+    } else if (vibe === 'space_saver') {
       // Variations of space saver: push against different walls
       if (variationIndex <= 2) {
         placement.x = Math.min(item.width / 2 + 1, maxW);
