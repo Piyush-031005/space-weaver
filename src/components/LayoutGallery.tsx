@@ -46,11 +46,14 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
             return (
               <div
                 key={opt.id}
-                onClick={() => onSelect(idx)}
-                className={`relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 p-6 flex flex-col h-full ${
+                onClick={() => {
+                  onSelect(idx);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 p-6 flex flex-col h-full ${
                   isSelected 
                     ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
-                    : "border-border/50 bg-background hover:border-primary/50 hover:shadow-sm"
+                    : "border-border/50 bg-background hover:border-primary/50 hover:shadow-lg hover:scale-[1.02]"
                 }`}
               >
                 {isSelected && (
@@ -138,6 +141,12 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                       </g>
                     ))}
                   </svg>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <button className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary'}`}>
+                    {isSelected ? 'Currently Viewing in 3D' : 'View in 3D & Analyze'}
+                  </button>
                 </div>
               </div>
             );
