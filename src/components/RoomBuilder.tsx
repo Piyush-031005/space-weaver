@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, Sofa, BedDouble, Monitor, Lamp, BookOpen, Armchair, Trash2 } from "lucide-react";
+import { X, Plus, Minus, Sofa, BedDouble, Monitor, Lamp, BookOpen, Armchair, Trash2, DoorClosed, AppWindow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface RoomBuilderProps {
@@ -29,6 +29,14 @@ interface CustomItem {
   quantity: number;
 }
 
+interface StructuralElement {
+  id: string;
+  type: "door" | "window";
+  wall: "top" | "right" | "bottom" | "left";
+  position: number;
+  width: number;
+}
+
 const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, isGenerating }) => {
   const [width, setWidth] = useState<number>(15);
   const [length, setLength] = useState<number>(20);
@@ -42,6 +50,8 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
     { id: "chair-1", type: "chair", label: "Chair", width: 2, depth: 2, quantity: 1 },
     { id: "table-1", type: "table", label: "Table", width: 3, depth: 3, quantity: 1 }
   ]);
+
+  const [structuralElements, setStructuralElements] = useState<StructuralElement[]>([]);
 
   const handleUnitChange = (newUnit: string) => {
     // Simple conversion logic based on base 'ft'
@@ -111,22 +121,6 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
     setError(null);
     
     // Calculate total areas
-    const roomArea = width * length;
-    const totalFurnitureArea = items.reduce((acc, item) => acc + (item.width * item.depth * item.quantity), 0);
-    
-    if (totalFurnitureArea > roomArea) {
-      setError(`Room is full! You need ${totalFurnitureArea} ${unit}² but only have ${roomArea} ${unit}².`);
-      return;
-    }
-    
-    // Explicitly create payload without any Event objects
-    const payload = {
-      room: { width, length },
-      fixedElements: [],
-      furniture: items.flatMap(item => 
-        Array.from({ length: item.quantity }).map((_, i) => ({
-          id: `${item.id}-${i}`,
-          type: item.type,
           width: item.width,
           depth: item.depth
         }))
@@ -293,9 +287,96 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                 </div>
               </section>
 
-              {/* Step 3: Vibe */}
+              {/* Step 3: Structural Elements */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">3. Spatial Objective</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent flex justify-between items-center">
+                  3. Doors & Windows
+                </h3>
+                
+                <div className="flex gap-2 pb-2">
+                  <button
+                    onClick={() => setStructuralElements([...structuralElements, { id: Math.random().toString(), type: "door", wall: "bottom", position: width/2, width: 3 }])}
+                    className="flex-1 flex items-center justify-center gap-2 bg-muted/30 border border-border rounded-lg px-4 py-3 hover:bg-primary/10 hover:border-primary/50 transition-colors"
+                  >
+                    <DoorClosed size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Add Door</span>
+                  </button>
+                  <button
+                    onClick={() => setStructuralElements([...structuralElements, { id: Math.random().toString(), type: "window", wall: "top", position: width/2, width: 4 }])}
+                    className="flex-1 flex items-center justify-center gap-2 bg-muted/30 border border-border rounded-lg px-4 py-3 hover:bg-primary/10 hover:border-primary/50 transition-colors"
+                  >
+                    <AppWindow size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium">Add Window</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3 mt-4">
+                  {structuralElements.map((el) => (
+                    <div key={el.id} className="p-4 rounded-xl border border-border/50 bg-muted/5 relative">
+                      <button 
+                        onClick={() => setStructuralElements(structuralElements.filter(e => e.id !== el.id))}
+                        className="absolute right-3 top-3 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      
+                      <div className="font-semibold text-foreground text-sm mb-3 capitalize flex items-center gap-2">
+                        {el.type === 'door' ? <DoorClosed size={14}/> : <AppWindow size={14}/>} 
+                        {el.type}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Wall</label>
+                          <select 
+                            value={el.wall}
+                            onChange={(e) => {
+                              const newWall = e.target.value as any;
+                              // Auto-adjust position if switching between length/width walls
+                              let newPos = el.position;
+                              if (newWall === 'top' || newWall === 'bottom') newPos = Math.min(el.position, width);
+                              if (newWall === 'left' || newWall === 'right') newPos = Math.min(el.position, length);
+                              
+                              setStructuralElements(structuralElements.map(e => e.id === el.id ? { ...e, wall: newWall, position: newPos } : e))
+                            }}
+                            className="w-full bg-background border border-border/50 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary capitalize"
+                          >
+                            <option value="top">Top</option>
+                            <option value="right">Right</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Width ({unit})</label>
+                          <input 
+                            type="number" step="0.5" value={el.width}
+                            onChange={(e) => setStructuralElements(structuralElements.map(e => e.id === el.id ? { ...e, width: Number(e.target.value) } : e))}
+                            className="w-full bg-background border border-border/50 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Position along wall ({unit})</label>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max={el.wall === 'top' || el.wall === 'bottom' ? width : length} 
+                          step="0.5" 
+                          value={el.position}
+                          onChange={(e) => setStructuralElements(structuralElements.map(e => e.id === el.id ? { ...e, position: Number(e.target.value) } : e))}
+                          className="w-full accent-primary"
+                        />
+                        <div className="text-xs text-right text-muted-foreground">{el.position} {unit}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Step 4: Vibe */}
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">4. Spatial Objective</h3>
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     { id: "space_saver", label: "Efficiency (Space Saver)", desc: "Maximizes open floor space in the center." },
