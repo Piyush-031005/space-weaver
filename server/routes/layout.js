@@ -9,7 +9,39 @@ const router = express.Router();
 
 router.post('/generate-layout', async (req, res) => {
   try {
-    const { room, fixedElements, furniture, vibe } = req.body;
+    const { room, structuralElements, furniture, vibe } = req.body;
+
+    const fixedElements = (structuralElements || []).map(el => {
+      // Map wall position to actual x, y coordinates
+      let x = 0;
+      let y = 0;
+      let depth = 0.5; // doors/windows have minimal depth intrusion
+      let width = el.width;
+      let rotation = 0;
+
+      if (el.wall === 'top') {
+        x = el.position;
+        y = 0;
+        rotation = 0;
+      } else if (el.wall === 'bottom') {
+        x = el.position;
+        y = room.length;
+        rotation = 0;
+      } else if (el.wall === 'left') {
+        x = 0;
+        y = el.position;
+        rotation = Math.PI / 2;
+      } else if (el.wall === 'right') {
+        x = room.width;
+        y = el.position;
+        rotation = Math.PI / 2;
+      }
+
+      return {
+        ...el,
+        x, y, width, depth, rotation
+      };
+    });
 
     const vibeDefinitions = {
       space_saver: { id: 'space_saver', name: 'Efficiency (Space Saver)', baseDesc: 'Maximizes open floor space in the center.' },

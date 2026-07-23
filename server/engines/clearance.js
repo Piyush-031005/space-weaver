@@ -21,17 +21,33 @@ export function calculateClearance(room, fixedElements, layout) {
     cleaningAccess -= 10;
   }
 
-  // Check if any item blocks the door explicitly (mock logic)
+  // True Clearance Math: Calculate distance from major seating/sleeping areas to the door
   const doors = fixedElements?.filter(el => el.type === 'door') || [];
-  for (const door of doors) {
-    for (const item of layout) {
-      // Very basic mock check: if an item is within 1 meter (or 3 feet) of the door
-      const dist = Math.sqrt(Math.pow(item.x - door.x, 2) + Math.pow(item.y - door.y, 2));
-      if (dist < 3) {
-        emergencyExit -= 40;
-        walkingComfort -= 20;
+  if (doors.length > 0) {
+    for (const door of doors) {
+      for (const item of layout) {
+        // Calculate true Euclidean distance from center of item to door
+        const dist = Math.sqrt(Math.pow(item.x - door.x, 2) + Math.pow(item.y - door.y, 2));
+        
+        // If furniture is blocking the door physically (within 4 feet/units)
+        if (dist <= 4) {
+          emergencyExit -= 60; // Huge penalty for blocking door
+          walkingComfort -= 30;
+        } else if (dist <= 6) {
+          // Tight squeeze
+          emergencyExit -= 20;
+          walkingComfort -= 15;
+        }
+
+        // Night Movement penalty if bed is extremely far from door
+        if (item.type?.toLowerCase() === 'bed' && dist > 15) {
+          nightMovement -= 15;
+        }
       }
     }
+  } else {
+    // If no doors were provided by user, penalize emergency exit heavily for realism
+    emergencyExit = 0;
   }
 
   // Calculate area metrics (True Contiguous Free Space)

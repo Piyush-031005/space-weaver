@@ -132,7 +132,8 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
 
     while (hasOverlap && attempts < maxAttempts) {
       hasOverlap = false;
-      for (const existing of layout) {
+      const allObstacles = [...layout, ...(fixedElements || [])];
+      for (const existing of allObstacles) {
         if (checkOverlap(placement, existing)) {
           hasOverlap = true;
           
