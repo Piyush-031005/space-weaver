@@ -7,31 +7,19 @@ import { Canvas } from "@react-three/fiber";
 import { useGLTF, Environment, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
-const products = [
-  {
-    id: 1,
-    name: "Aura Minimalist Sofa",
-    brand: "Design Within Reach",
-    price: "$1,299",
-    src: "/models/sofa.glb",
-    link: "#",
-  },
-  {
-    id: 2,
-    name: "Walnut Dining Table",
-    brand: "Herman Miller",
-    price: "$2,450",
-    src: "/models/classic_table.glb",
-    link: "#",
-  },
-  {
-    id: 3,
-    name: "Ambient Floor Lamp",
-    brand: "Flos",
-    price: "$450",
-    src: "/models/titanic_lamp.glb",
-    link: "#",
-  },
+const allProducts = [
+  // Premium
+  { id: 1, tier: "premium", name: "Aura Minimalist Sofa", brand: "Design Within Reach", price: "₹1,29,900", src: "/models/sofa.glb", link: "#" },
+  { id: 2, tier: "premium", name: "Walnut Dining Table", brand: "Herman Miller", price: "₹2,45,000", src: "/models/classic_table.glb", link: "#" },
+  { id: 3, tier: "premium", name: "Ambient Floor Lamp", brand: "Flos", price: "₹45,000", src: "/models/titanic_lamp.glb", link: "#" },
+  // Mid-Range
+  { id: 4, tier: "mid", name: "Contemporary Sofa", brand: "Urban Ladder", price: "₹45,000", src: "/models/sofa.glb", link: "#" },
+  { id: 5, tier: "mid", name: "Oak Wood Table", brand: "Pepperfry", price: "₹35,000", src: "/models/classic_table.glb", link: "#" },
+  { id: 6, tier: "mid", name: "Brass Floor Lamp", brand: "IKEA", price: "₹12,000", src: "/models/titanic_lamp.glb", link: "#" },
+  // Budget (Artisan)
+  { id: 7, tier: "budget", name: "Handcrafted Jute Sofa", brand: "Jaipur Artisans", price: "₹18,000", src: "/models/sofa.glb", link: "#" },
+  { id: 8, tier: "budget", name: "Reclaimed Wood Table", brand: "Local Carpenter", price: "₹12,000", src: "/models/classic_table.glb", link: "#" },
+  { id: 9, tier: "budget", name: "Terracotta Lamp", brand: "Moradabad Craft", price: "₹4,500", src: "/models/titanic_lamp.glb", link: "#" },
 ];
 
 const ShowcaseModel = ({ src }: { src: string }) => {
@@ -60,7 +48,9 @@ const ShowcaseModel = ({ src }: { src: string }) => {
   return <primitive object={normalizedModel} />;
 };
 
-const AffiliateShowcase = () => {
+const AffiliateShowcase = ({ budget = "budget" }: { budget?: string }) => {
+  const products = allProducts.filter(p => p.tier === budget);
+  
   return (
     <section className="section-padding bg-background">
       <div className="max-w-7xl mx-auto">
@@ -123,9 +113,14 @@ const AffiliateShowcase = () => {
               </div>
               
               <div className="space-y-2">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                  {product.brand}
-                </p>
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                    {product.brand}
+                  </p>
+                  {budget === "budget" && (
+                    <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">Support Local</span>
+                  )}
+                </div>
                 <div className="flex justify-between items-center">
                   <h3 className="font-display text-lg font-semibold text-foreground">
                     {product.name}

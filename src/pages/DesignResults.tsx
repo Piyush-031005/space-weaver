@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import WebGLHero from "@/components/WebGLHero";
 import SpaceDNA from "@/components/SpaceDNA";
 import LayoutGallery from "@/components/LayoutGallery";
+import AffiliateShowcase from "@/components/AffiliateShowcase";
 import html2canvas from "html2canvas";
 import { ArrowLeft, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,11 @@ const DesignResults = () => {
             onDownload={handleDownload}
           />
         )}
+        
+        {/* Dynamic Budget Decor / Monetization */}
+        <div className="mt-12">
+          <AffiliateShowcase budget={payloadToUse?.budget || "budget"} />
+        </div>
       </div>
     </div>
   );
