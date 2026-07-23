@@ -25,7 +25,11 @@ const DesignResults = () => {
     setIsGenerating(true);
     
     try {
-      const payload = { ...payloadToUse, vibe: newVibe };
+      const payload = { 
+        ...payloadToUse, 
+        vibe: newVibe,
+        structuralElements: payloadToUse?.structuralElements || []
+      };
       const response = await fetch("http://localhost:5000/api/generate-layout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
