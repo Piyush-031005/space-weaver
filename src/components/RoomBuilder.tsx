@@ -41,6 +41,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   const [width, setWidth] = useState<number>(15);
   const [length, setLength] = useState<number>(20);
   const [vibe, setVibe] = useState<string>("cozy");
+  const [budget, setBudget] = useState<string>("budget");
   const [unit, setUnit] = useState<string>("ft");
   const [error, setError] = useState<string | null>(null);
   
@@ -121,11 +122,28 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
     setError(null);
     
     // Calculate total areas
+    const roomArea = width * length;
+    const totalFurnitureArea = items.reduce((acc, item) => acc + (item.width * item.depth * item.quantity), 0);
+    
+    if (totalFurnitureArea > roomArea) {
+      setError(`Room is full! You need ${totalFurnitureArea} ${unit}² but only have ${roomArea} ${unit}².`);
+      return;
+    }
+    
+    // Explicitly create payload
+    const payload = {
+      room: { width, length },
+      structuralElements: structuralElements,
+      furniture: items.flatMap(item => 
+        Array.from({ length: item.quantity }).map((_, i) => ({
+          id: `${item.id}-${i}`,
+          type: item.type,
           width: item.width,
           depth: item.depth
         }))
       ),
       vibe: vibe,
+      budget: budget,
       unit: unit
     };
 
@@ -374,9 +392,45 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                 </div>
               </section>
 
-              {/* Step 4: Vibe */}
+              </section>
+
+              {/* Step 4: Budget */}
               <section className="space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">4. Spatial Objective</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">4. Budget Tier</h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { id: "budget", label: "Budget Friendly", desc: "Local artisans & cost-effective pieces (₹15k - ₹30k)" },
+                    { id: "mid", label: "Mid-Range", desc: "Quality contemporary brands (₹50k - ₹80k)" },
+                    { id: "premium", label: "Premium Studio", desc: "High-end design houses (₹1.5L+)" }
+                  ].map((b) => (
+                    <div 
+                      key={b.id}
+                      onClick={() => setBudget(b.id)}
+                      className={`cursor-pointer p-4 rounded-xl border transition-all duration-200 ${
+                        budget === b.id 
+                          ? "border-primary bg-primary/5 shadow-sm" 
+                          : "border-border/50 bg-background hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`font-medium ${budget === b.id ? "text-primary" : "text-foreground"}`}>
+                          {b.label}
+                        </span>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          budget === b.id ? "border-primary" : "border-muted-foreground"
+                        }`}>
+                          {budget === b.id && <div className="w-2 h-2 bg-primary rounded-full" />}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{b.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Step 5: Vibe */}
+              <section className="space-y-4 pb-20">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">5. Spatial Objective</h3>
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     { id: "space_saver", label: "Efficiency (Space Saver)", desc: "Maximizes open floor space in the center." },
