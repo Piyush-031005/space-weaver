@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Environment } from "@react-three/drei";
+import { useGLTF, Environment, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { motion } from "framer-motion";
@@ -171,9 +171,10 @@ interface WebGLHeroProps {
   hasGenerated?: boolean;
   layoutData?: any[];
   showText?: boolean;
+  fullHeight?: boolean;
 }
 
-const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData, showText = true }) => {
+const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData, showText = true, fullHeight = true }) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
   useEffect(() => {
@@ -199,10 +200,11 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
   }, [isGenerating, hasGenerated]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+    <section className={`relative ${fullHeight ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden bg-background`}>
       {/* 3D Canvas Background */}
-      <div className="absolute inset-0 z-0 opacity-60">
+      <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-60" : "opacity-100"}`}>
         <Canvas camera={{ position: [0, 0, 15], fov: 40 }}>
+          {!fullHeight && <OrbitControls makeDefault enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2 + 0.1} />}
           <Suspense fallback={null}>
             <Scene phase={phase} layoutData={layoutData} />
           </Suspense>

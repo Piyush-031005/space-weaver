@@ -22,7 +22,7 @@ router.post('/generate-layout', async (req, res) => {
 
     for (let i = 1; i <= 9; i++) {
       // 1. Scoring Engine: Generate initial placement based on vibe mode AND variation
-      const layout = scorePlacement(room, fixedElements, furniture, activeVibe.id, i);
+      const { layout, droppedItems } = scorePlacement(room, fixedElements, furniture, activeVibe.id, i);
 
       // 2. Collision Engine: Validate overlaps
       const collisions = checkCollisions(layout);
@@ -41,6 +41,7 @@ router.post('/generate-layout', async (req, res) => {
         name: `${activeVibe.name} - Var ${i}`,
         desc: `${activeVibe.baseDesc} (Configuration ${i})`,
         layout,
+        droppedItems,
         clearanceScores,
         genome,
         roast,

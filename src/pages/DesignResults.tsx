@@ -90,6 +90,7 @@ const DesignResults = () => {
           hasGenerated={true}
           layoutData={activeOption?.layout}
           showText={false}
+          fullHeight={false}
         />
       </div>
 

@@ -5,6 +5,7 @@
 
 export function scorePlacement(room, fixedElements, furniture, vibe, variationIndex = 1) {
   const layout = [];
+  const droppedItems = [];
   
   // Use variation index to slightly offset starting positions and logic
   let currentX = (room.width / 2) + (variationIndex * 0.5) % 2;
@@ -128,11 +129,12 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
     // If we exhausted attempts, the room is too small for this item without overlapping.
     // We will cull (drop) this item to preserve physics rather than force an overlap.
     if (hasOverlap) {
+      droppedItems.push(item);
       continue;
     }
 
     layout.push(placement);
   }
 
-  return layout;
+  return { layout, droppedItems };
 }

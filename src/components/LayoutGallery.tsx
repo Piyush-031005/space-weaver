@@ -73,15 +73,22 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
 
                 {/* Metrics */}
                 {clearance?.spaceSavedPercentage !== undefined && (
-                  <div className="mb-4 flex gap-4 text-xs font-medium">
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Space Saved</span>
-                      <span className="text-accent">{clearance.spaceSavedPercentage}%</span>
+                  <div className="mb-4 flex flex-col gap-2">
+                    <div className="flex gap-4 text-xs font-medium">
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground">Space Saved</span>
+                        <span className="text-accent">{clearance.spaceSavedPercentage}%</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-muted-foreground">Free Area</span>
+                        <span className="text-foreground">{Math.round(clearance.freeSpaceArea)} sq {unit}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Free Area</span>
-                      <span className="text-foreground">{Math.round(clearance.freeSpaceArea)} sq {unit}</span>
-                    </div>
+                    {opt.droppedItems && opt.droppedItems.length > 0 && (
+                      <div className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-md inline-block self-start mt-1">
+                        Housefull! {opt.droppedItems.length} {opt.droppedItems.length === 1 ? 'item' : 'items'} left out.
+                      </div>
+                    )}
                   </div>
                 )}
 
