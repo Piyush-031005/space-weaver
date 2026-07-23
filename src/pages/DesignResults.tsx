@@ -4,20 +4,33 @@ import Navbar from "@/components/Navbar";
 import WebGLHero from "@/components/WebGLHero";
 import SpaceDNA from "@/components/SpaceDNA";
 import LayoutGallery from "@/components/LayoutGallery";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import html2canvas from "html2canvas";
+import { ArrowLeft, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const DesignResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Retrieve the generated data from router state
+  // Retrieve the generated data from router state or URL (if shared)
+  const searchParams = new URLSearchParams(location.search);
+  const sharedData = searchParams.get('data');
+  
+  let parsedSharedData = null;
+  if (sharedData) {
+    try {
+      parsedSharedData = { options: [JSON.parse(atob(sharedData))] };
+    } catch (e) {
+      console.error("Invalid share link", e);
+    }
+  }
+
   const { data: initialData, payloadToUse } = location.state || {};
   
   const [activeOptionIndex, setActiveOptionIndex] = useState(0);
-  const [currentData, setCurrentData] = useState(initialData);
+  const [currentData, setCurrentData] = useState(parsedSharedData || initialData);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || "cozy");
+  const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || (parsedSharedData ? parsedSharedData.options[0].id.split('_')[0] : "cozy"));
 
   const handleVibeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVibe = e.target.value;
@@ -59,6 +72,33 @@ const DesignResults = () => {
   }
 
   const activeOption = currentData.options[activeOptionIndex];
+
+  const handleShare = async () => {
+    try {
+      const encoded = btoa(JSON.stringify(activeOption));
+      const url = `${window.location.origin}${window.location.pathname}?data=${encoded}`;
+      await navigator.clipboard.writeText(url);
+      alert("Shareable URL copied to clipboard!");
+    } catch (e) {
+      console.error("Failed to copy URL", e);
+      alert("Failed to create shareable link. Layout might be too complex.");
+    }
+  };
+
+  const handleDownload = async () => {
+    const element = document.getElementById("spacedna-card");
+    if (element) {
+      try {
+        const canvas = await html2canvas(element, { backgroundColor: "#09090b" }); // matches background
+        const link = document.createElement("a");
+        link.download = `SpaceGenome_${activeOption.genome.archetype.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      } catch (e) {
+        console.error("Failed to download image", e);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -108,7 +148,13 @@ const DesignResults = () => {
           unit={payloadToUse?.unit}
         />
         
-        {activeOption && <SpaceDNA spaceData={activeOption} />}
+        {activeOption && (
+          <SpaceDNA 
+            spaceData={activeOption} 
+            onShare={handleShare}
+            onDownload={handleDownload}
+          />
+        )}
       </div>
     </div>
   );

@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 
 interface SpaceDNAProps {
   spaceData: any;
+  onShare?: () => void;
+  onDownload?: () => void;
 }
 
-const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData }) => {
+const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData, onShare, onDownload }) => {
   if (!spaceData) return null;
 
   const { genome, roast } = spaceData;
@@ -64,7 +66,7 @@ const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData }) => {
           transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="flex-1 w-full max-w-md relative"
         >
-          <div className="relative rounded-[2rem] bg-background/50 p-10 overflow-hidden">
+          <div id="spacedna-card" className="relative rounded-[2rem] bg-background/50 p-10 overflow-hidden">
             {/* Geometric Glyph Background */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -117,11 +119,18 @@ const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData }) => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-4 w-full">
-                <Button className="flex-1 bg-primary text-primary-foreground rounded-xl hover:scale-105 transition-transform">
-                  <Share2 className="w-4 h-4 mr-2" /> Share
+              <div className="flex gap-4 w-full mt-6">
+                <Button 
+                  onClick={onShare}
+                  className="flex-1 bg-primary text-primary-foreground rounded-xl hover:scale-105 transition-transform"
+                >
+                  <Share2 className="w-4 h-4 mr-2" /> Share Result
                 </Button>
-                <Button variant="outline" size="icon" className="rounded-xl border-border/50 hover:bg-accent/5">
+                <Button 
+                  onClick={onDownload}
+                  variant="outline" size="icon" 
+                  className="rounded-xl border-border/50 hover:bg-accent/5"
+                >
                   <Download className="w-4 h-4" />
                 </Button>
               </div>
