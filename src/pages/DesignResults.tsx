@@ -5,6 +5,7 @@ import WebGLHero from "@/components/WebGLHero";
 import SpaceDNA from "@/components/SpaceDNA";
 import LayoutGallery from "@/components/LayoutGallery";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
+import CustomizeOverlay from "@/components/CustomizeOverlay";
 import html2canvas from "html2canvas";
 import { ArrowLeft, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const DesignResults = () => {
   const [activeOptionIndex, setActiveOptionIndex] = useState(0);
   const [currentData, setCurrentData] = useState(parsedSharedData || initialData);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || (parsedSharedData ? parsedSharedData.options[0].id.split('_')[0] : "cozy"));
 
   const handleVibeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -154,6 +156,7 @@ const DesignResults = () => {
             spaceData={activeOption} 
             onShare={handleShare}
             onDownload={handleDownload}
+            onCustomize={() => setIsCustomizeOpen(true)}
           />
         )}
         
@@ -162,6 +165,27 @@ const DesignResults = () => {
           <AffiliateShowcase budget={payloadToUse?.budget || "budget"} />
         </div>
       </div>
+
+      {activeOption && (
+        <CustomizeOverlay 
+          isOpen={isCustomizeOpen}
+          onClose={() => setIsCustomizeOpen(false)}
+          initialLayout={activeOption.layout}
+          room={payloadToUse?.room || { width: 20, length: 20 }}
+          unit={payloadToUse?.unit || "ft"}
+          onSave={(newLayout) => {
+            // Update the current option with the new layout
+            const newOptions = [...currentData.options];
+            newOptions[activeOptionIndex] = {
+              ...newOptions[activeOptionIndex],
+              layout: newLayout
+            };
+            setCurrentData({ ...currentData, options: newOptions });
+            setIsCustomizeOpen(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
     </div>
   );
 };

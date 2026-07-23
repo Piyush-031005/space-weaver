@@ -6,9 +6,10 @@ interface SpaceDNAProps {
   spaceData: any;
   onShare?: () => void;
   onDownload?: () => void;
+  onCustomize?: () => void;
 }
 
-const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData, onShare, onDownload }) => {
+const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData, onShare, onDownload, onCustomize }) => {
   if (!spaceData) return null;
 
   const { genome, roast } = spaceData;
@@ -120,6 +121,12 @@ const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData, onShare, onDownload }) =
 
               {/* Actions */}
               <div className="flex gap-4 w-full mt-6">
+                <Button 
+                  onClick={onCustomize}
+                  className="flex-1 bg-accent text-accent-foreground rounded-xl hover:scale-105 transition-transform font-bold"
+                >
+                  Customize Room
+                </Button>
                 <Button 
                   onClick={onShare}
                   className="flex-1 bg-primary text-primary-foreground rounded-xl hover:scale-105 transition-transform"
