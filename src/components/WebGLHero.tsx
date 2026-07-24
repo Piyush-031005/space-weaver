@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Environment, OrbitControls } from "@react-three/drei";
+import { useGLTF, Environment, OrbitControls, SoftShadows } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { motion } from "framer-motion";
@@ -100,7 +100,7 @@ const FurnitureModel = ({
 };
 
 // Scene wrapper to handle mouse parallax and lights
-const Scene = ({ phase, layoutData, fullHeight }: { phase: "chaos" | "arranging" | "arranged", layoutData?: any[], fullHeight: boolean }) => {
+const Scene = ({ phase, layoutData, fixedElements, fullHeight }: { phase: "chaos" | "arranging" | "arranged", layoutData?: any[], fixedElements?: any[], fullHeight: boolean }) => {
   const { camera, pointer } = useThree();
   
   useFrame(() => {
@@ -145,10 +145,43 @@ const Scene = ({ phase, layoutData, fullHeight }: { phase: "chaos" | "arranging"
   return (
     <>
       <ambientLight intensity={1.2} />
-      <directionalLight position={[10, 10, 5]} intensity={1.5} castShadow />
+      <directionalLight position={[10, 20, 15]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0001} />
       <directionalLight position={[-10, -10, 5]} intensity={0.5} color="#8cb3a6" />
+      <SoftShadows size={25} samples={10} focus={0.5} />
       <Environment preset="city" />
       
+      {/* Structural Elements (Doors & Windows) */}
+      {phase === "arranged" && fixedElements && (
+        <group>
+          {fixedElements.map((el, i) => {
+            // Coordinate mapping to center the room at 0,0
+            // Assuming room is 15x20 for visual centering offset (X: -7.5, Y: -10)
+            let x = 0; let y = 0; let rotation = 0;
+            const roomW = 15; const roomL = 20; // Default assumption for visuals if not provided
+            
+            if (el.wall === 'top') { x = el.position - (roomW/2); y = -(roomL/2); rotation = 0; }
+            else if (el.wall === 'bottom') { x = el.position - (roomW/2); y = (roomL/2); rotation = 0; }
+            else if (el.wall === 'left') { x = -(roomW/2); y = el.position - (roomL/2); rotation = Math.PI/2; }
+            else if (el.wall === 'right') { x = (roomW/2); y = el.position - (roomL/2); rotation = Math.PI/2; }
+
+            return (
+              <group key={`struct-${i}`} position={[x, y, 0]} rotation={[0, 0, rotation]}>
+                <mesh position={[0, el.type === 'window' ? 1.5 : 0.5, 0]}>
+                  <boxGeometry args={[el.width, el.type === 'window' ? 1 : 2, 0.5]} />
+                  <meshStandardMaterial 
+                    color={el.type === 'window' ? "#88ccff" : "#8b5a2b"} 
+                    transparent={el.type === 'window'} 
+                    opacity={el.type === 'window' ? 0.6 : 1}
+                    roughness={0.8}
+                    metalness={0.1}
+                  />
+                </mesh>
+              </group>
+            );
+          })}
+        </group>
+      )}
+
       <group>
         {activeItems.map((item, i) => (
           <FurnitureModel
@@ -171,11 +204,12 @@ interface WebGLHeroProps {
   isGenerating?: boolean;
   hasGenerated?: boolean;
   layoutData?: any[];
+  fixedElements?: any[];
   showText?: boolean;
   fullHeight?: boolean;
 }
 
-const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData, showText = true, fullHeight = true }) => {
+const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData, fixedElements, showText = true, fullHeight = true }) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
   useEffect(() => {
@@ -204,10 +238,15 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
     <section className={`relative ${fullHeight ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden bg-background`}>
       {/* 3D Canvas Background */}
       <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
-        <Canvas camera={{ position: [0, 0, 15], fov: 40 }}>
+        <Canvas 
+          camera={{ position: [0, 0, 15], fov: 40 }}
+          shadows
+          dpr={[1, 2]}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+        >
           {!fullHeight && <OrbitControls makeDefault enableZoom={true} enablePan={true} enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2 + 0.1} />}
           <Suspense fallback={null}>
-            <Scene phase={phase} layoutData={layoutData} fullHeight={fullHeight} />
+            <Scene phase={phase} layoutData={layoutData} fixedElements={fixedElements} fullHeight={fullHeight} />
           </Suspense>
         </Canvas>
       </div>
