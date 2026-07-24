@@ -100,10 +100,11 @@ const FurnitureModel = ({
 };
 
 // Scene wrapper to handle mouse parallax and lights
-const Scene = ({ phase, layoutData }: { phase: "chaos" | "arranging" | "arranged", layoutData?: any[] }) => {
+const Scene = ({ phase, layoutData, fullHeight }: { phase: "chaos" | "arranging" | "arranged", layoutData?: any[], fullHeight: boolean }) => {
   const { camera, pointer } = useThree();
   
   useFrame(() => {
+    if (!fullHeight) return; // Disable parallax if we want OrbitControls to take over
     // Smooth camera parallax
     const targetX = (pointer.x * 2);
     const targetY = (pointer.y * 2);
@@ -202,11 +203,11 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
   return (
     <section className={`relative ${fullHeight ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden bg-background`}>
       {/* 3D Canvas Background */}
-      <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-60" : "opacity-100"}`}>
+      <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
         <Canvas camera={{ position: [0, 0, 15], fov: 40 }}>
-          {!fullHeight && <OrbitControls makeDefault enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2 + 0.1} />}
+          {!fullHeight && <OrbitControls makeDefault enableZoom={true} enablePan={true} enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2 + 0.1} />}
           <Suspense fallback={null}>
-            <Scene phase={phase} layoutData={layoutData} />
+            <Scene phase={phase} layoutData={layoutData} fullHeight={fullHeight} />
           </Suspense>
         </Canvas>
       </div>
