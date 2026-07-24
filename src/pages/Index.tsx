@@ -5,6 +5,17 @@ import WebGLHero from "@/components/WebGLHero";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
 import Footer from "@/components/Footer";
 import RoomBuilder from "@/components/RoomBuilder";
+import SpaceGenomePreview from "@/components/SpaceGenomePreview";
+
+export interface RoomPayload {
+  room: { width: number; length: number };
+  fixedElements?: any[];
+  structuralElements?: any[];
+  furniture: Array<{ id: string; type: string; width: number; depth: number }>;
+  vibe: string;
+  budget?: string;
+  unit?: string;
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -12,14 +23,14 @@ const Index = () => {
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   
   // Store the user's custom payload
-  const [currentPayload, setCurrentPayload] = useState<any>(null);
+  const [currentPayload, setCurrentPayload] = useState<RoomPayload | null>(null);
 
-  const handleGenerate = async (customPayload?: any) => {
+  const handleGenerate = async (customPayload?: RoomPayload | React.SyntheticEvent) => {
     setIsGenerating(true);
     
     // Check if customPayload is actually a React event
-    const isEvent = customPayload && (customPayload.nativeEvent || customPayload.target);
-    const validPayload = isEvent ? null : customPayload;
+    const isEvent = customPayload && ('nativeEvent' in customPayload || 'target' in customPayload);
+    const validPayload = isEvent ? null : (customPayload as RoomPayload);
 
     // If no valid custom payload, use the stored one or a fallback
     const payloadToUse = validPayload || currentPayload || {
@@ -72,6 +83,8 @@ const Index = () => {
         hasGenerated={false}
         layoutData={undefined}
       />
+      
+      <SpaceGenomePreview />
 
       <AffiliateShowcase />
       <Footer />

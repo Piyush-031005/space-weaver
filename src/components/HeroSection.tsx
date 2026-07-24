@@ -79,6 +79,49 @@ const furnitureItems: FurnitureItem[] = [
   },
 ];
 
+const FurnitureItemNode = ({
+  item,
+  i,
+  mouseX,
+  mouseY,
+  controls
+}: {
+  item: FurnitureItem;
+  i: number;
+  mouseX: any;
+  mouseY: any;
+  controls: any;
+}) => {
+  const px = useTransform(mouseX, [-1, 1], [-item.parallaxStrength * 100, item.parallaxStrength * 100]);
+  const py = useTransform(mouseY, [-1, 1], [-item.parallaxStrength * 80, item.parallaxStrength * 80]);
+
+  return (
+    <motion.div
+      custom={i}
+      animate={controls}
+      initial={{ opacity: 0, x: 0, y: 0, scale: 0 }}
+      className="absolute"
+      style={{
+        width: item.size,
+        height: item.size,
+        translateX: px,
+        translateY: py,
+        filter: "drop-shadow(0 20px 40px rgba(60,40,20,0.25))",
+      }}
+    >
+      <img
+        src={item.src}
+        alt={item.label}
+        className="w-full h-full object-contain"
+        draggable={false}
+        width={item.size}
+        height={item.size}
+      />
+    </motion.div>
+  );
+};
+
+// ... inside HeroSection ...
 const HeroSection = () => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
   const controls = useAnimation();
@@ -170,36 +213,16 @@ const HeroSection = () => {
 
       {/* Furniture animation layer with mouse parallax */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {furnitureItems.map((item, i) => {
-          const px = useTransform(mouseX, [-1, 1], [-item.parallaxStrength * 100, item.parallaxStrength * 100]);
-          const py = useTransform(mouseY, [-1, 1], [-item.parallaxStrength * 80, item.parallaxStrength * 80]);
-
-          return (
-            <motion.div
-              key={item.id}
-              custom={i}
-              animate={controls}
-              initial={{ opacity: 0, x: 0, y: 0, scale: 0 }}
-              className="absolute"
-              style={{
-                width: item.size,
-                height: item.size,
-                translateX: px,
-                translateY: py,
-                filter: "drop-shadow(0 20px 40px rgba(60,40,20,0.25))",
-              }}
-            >
-              <img
-                src={item.src}
-                alt={item.label}
-                className="w-full h-full object-contain"
-                draggable={false}
-                width={item.size}
-                height={item.size}
-              />
-            </motion.div>
-          );
-        })}
+        {furnitureItems.map((item, i) => (
+          <FurnitureItemNode
+            key={item.id}
+            item={item}
+            i={i}
+            mouseX={mouseX}
+            mouseY={mouseY}
+            controls={controls}
+          />
+        ))}
       </div>
 
       {/* Gradient overlay — 3-layer system for text readability */}
