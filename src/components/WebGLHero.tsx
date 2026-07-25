@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Environment, OrbitControls, SoftShadows } from "@react-three/drei";
+import { useGLTF, Environment, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { motion } from "framer-motion";
@@ -16,8 +16,8 @@ const FurnitureModel = ({
   index,
 }: {
   src: string;
-  chaosPos: { x: number; y: number; r: number };
-  arrangedPos: { x: number; y: number; r: number };
+  chaosPos: { x: number; y: number; z: number; r: number };
+  arrangedPos: { x: number; z: number; r: number };
   size: number;
   phase: "chaos" | "arranging" | "arranged";
   index: number;
@@ -25,7 +25,7 @@ const FurnitureModel = ({
   const { scene } = useGLTF(src);
   const meshRef = useRef<THREE.Group>(null);
   
-  // Clone, scale, and center the model once
+  // Clone, scale, and align model so bottom sits at y = 0
   const normalizedModel = useMemo(() => {
     const clone = scene.clone();
     
@@ -34,50 +34,47 @@ const FurnitureModel = ({
     const sizeVec = new THREE.Vector3();
     box.getSize(sizeVec);
     
-    // Scale so the largest dimension matches `size`
+    // Scale so largest dimension matches `size`
     const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
     const targetScale = size / (maxDim || 1);
     clone.scale.set(targetScale, targetScale, targetScale);
     
-    // Center it
+    // Recompute box after scale to get exact bottom Y and center
+    const scaledBox = new THREE.Box3().setFromObject(clone);
     const center = new THREE.Vector3();
-    box.getCenter(center);
-    clone.position.set(-center.x * targetScale, -center.y * targetScale, -center.z * targetScale);
+    scaledBox.getCenter(center);
+    const bottomY = scaledBox.min.y;
     
+    // Align horizontally to center (0,0) and vertically to bottom edge (0)
+    clone.position.set(-center.x, -bottomY, -center.z);
+    
+    // Enable shadows on all child meshes
+    clone.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
     return clone;
   }, [scene, size]);
   
-  // We use GSAP to animate position/rotation based on phase
+  // Animate position/rotation based on phase
   useEffect(() => {
     if (!meshRef.current) return;
-    
     const ref = meshRef.current;
     
     if (phase === "chaos") {
-      gsap.to(ref.position, { x: chaosPos.x, y: chaosPos.y, z: (Math.random() - 0.5) * 4, duration: 1.5, ease: "power2.out" });
-      // In chaos, tumble around randomly
-      gsap.to(ref.rotation, { x: Math.random() * 2, y: Math.random() * 2, z: chaosPos.r, duration: 1.5, ease: "power2.out" });
+      gsap.to(ref.position, { x: chaosPos.x, y: chaosPos.y, z: chaosPos.z, duration: 1.5, ease: "power2.out" });
+      gsap.to(ref.rotation, { x: Math.random() * 0.5, y: chaosPos.r, z: Math.random() * 0.5, duration: 1.5, ease: "power2.out" });
     } else if (phase === "arranging") {
-      // Suck them into the center
-      gsap.to(ref.position, { x: 0, y: 0, z: 0, duration: 0.6, ease: "power2.inOut" });
+      gsap.to(ref.position, { x: 0, y: 3, z: 0, duration: 0.6, ease: "power2.inOut" });
       gsap.to(ref.rotation, { x: 0, y: 0, z: 0, duration: 0.6, ease: "power2.inOut" });
     } else if (phase === "arranged") {
       const baseDelay = index * 0.05;
-      
-      // Top down view in 3D: Layout Y goes to Z (depth), layout Y is flat floor.
-      // But we have orthographic/top down camera looking from Z?
-      // Wait, original was top-down with orthographic-like planes.
-      // Let's lay the models flat on a floor:
-      // X = layout x, Y = 0 (floor), Z = layout y
-      // But our camera is at [0,0,10] looking at [0,0,0].
-      // So X is X, Y is up, Z is depth.
-      // To match top-down floor plans, X=x, Y=y. 
-      // If we put them at X=x, Y=y, they will look like they are bolted to a wall.
-      // So we must rotate the models 90 degrees on X axis to show their top!
-      
-      gsap.to(ref.position, { x: arrangedPos.x, y: arrangedPos.y, z: 0, duration: 2.5, ease: "elastic.out(1, 0.75)", delay: baseDelay });
-      // Rotate 90 degrees (1.57 rad) on X to face the camera (top-down view)
-      gsap.to(ref.rotation, { x: Math.PI / 2, y: arrangedPos.r, z: 0, duration: 2.5, ease: "elastic.out(1, 0.75)", delay: baseDelay });
+      // Land smoothly on floor (y = 0) at arranged coordinates
+      gsap.to(ref.position, { x: arrangedPos.x, y: 0, z: arrangedPos.z, duration: 2.2, ease: "power3.out", delay: baseDelay });
+      gsap.to(ref.rotation, { x: 0, y: arrangedPos.r, z: 0, duration: 2.2, ease: "power3.out", delay: baseDelay });
     }
   }, [phase, chaosPos, arrangedPos, index]);
 
@@ -87,7 +84,6 @@ const FurnitureModel = ({
     const t = clock.getElapsedTime();
     if (phase === "chaos") {
       meshRef.current.position.y += Math.sin(t + index) * 0.005;
-      meshRef.current.rotation.x += Math.sin(t * 0.5 + index) * 0.002;
       meshRef.current.rotation.y += Math.cos(t * 0.5 + index) * 0.002;
     }
   });
@@ -99,28 +95,42 @@ const FurnitureModel = ({
   );
 };
 
-// Scene wrapper to handle mouse parallax and lights
-const Scene = ({ phase, layoutData, fixedElements, fullHeight }: { phase: "chaos" | "arranging" | "arranged", layoutData?: any[], fixedElements?: any[], fullHeight: boolean }) => {
+// Scene wrapper with Architectural Floor, Walls, Grid, and Lights
+const Scene = ({ 
+  phase, 
+  layoutData, 
+  fixedElements, 
+  fullHeight, 
+  room 
+}: { 
+  phase: "chaos" | "arranging" | "arranged"; 
+  layoutData?: any[]; 
+  fixedElements?: any[]; 
+  fullHeight: boolean;
+  room?: { width: number; length: number };
+}) => {
   const { camera, pointer } = useThree();
+  const roomW = room?.width || 15;
+  const roomL = room?.length || 20;
   
   useFrame(() => {
-    if (!fullHeight) return; // Disable parallax if we want OrbitControls to take over
-    // Smooth camera parallax
-    const targetX = (pointer.x * 2);
-    const targetY = (pointer.y * 2);
+    if (!fullHeight) return; // Disable parallax on interactive results page
+    // Smooth camera parallax for Hero section
+    const targetX = (pointer.x * 3);
+    const targetZ = 18 + (pointer.y * 3);
     camera.position.x += (targetX - camera.position.x) * 0.05;
-    camera.position.y += (targetY - camera.position.y) * 0.05;
+    camera.position.z += (targetZ - camera.position.z) * 0.05;
     camera.lookAt(0, 0, 0);
   });
 
   const defaultItems = [
-    { src: "/models/sofa.glb", chaos: { x: -4, y: -2, r: -0.5 }, arranged: { x: -2.5, y: 1, r: -0.05 }, size: 3.5 },
-    { src: "/models/classic_table.glb", chaos: { x: 4, y: -2, r: 1.2 }, arranged: { x: 0.5, y: 0, r: 0 }, size: 3 },
-    { src: "/models/old_armchair.glb", chaos: { x: -3, y: 3, r: -0.8 }, arranged: { x: -1.5, y: -1, r: 0.1 }, size: 2 },
-    { src: "/models/bookshelf.glb", chaos: { x: -2, y: -4, r: 1.5 }, arranged: { x: 3.5, y: -0.5, r: 0 }, size: 2.5 },
-    { src: "/models/bed.glb", chaos: { x: -5, y: 1, r: -1.8 }, arranged: { x: -3.5, y: -1.5, r: 0.02 }, size: 3.5 },
-    { src: "/models/flat_screen_tv.glb", chaos: { x: 3.5, y: 2.5, r: 0.7 }, arranged: { x: 3, y: 1.5, r: -0.02 }, size: 2.5 },
-    { src: "/models/titanic_lamp.glb", chaos: { x: 4.5, y: -3.5, r: 2.2 }, arranged: { x: 1.5, y: -1.5, r: 0 }, size: 1.5 },
+    { src: "/models/sofa.glb", chaos: { x: -5, y: 6, z: -3, r: -0.5 }, arranged: { x: -2.5, z: 2, r: 0 }, size: 3.5 },
+    { src: "/models/classic_table.glb", chaos: { x: 5, y: 5, z: -2, r: 1.2 }, arranged: { x: 0.5, z: 0, r: 0 }, size: 3 },
+    { src: "/models/old_armchair.glb", chaos: { x: -4, y: 7, z: 4, r: -0.8 }, arranged: { x: -2.0, z: -2, r: 0.5 }, size: 2 },
+    { src: "/models/bookshelf.glb", chaos: { x: -3, y: 4, z: -5, r: 1.5 }, arranged: { x: (roomW/2) - 1.5, z: -2, r: -Math.PI/2 }, size: 2.5 },
+    { src: "/models/bed.glb", chaos: { x: -6, y: 8, z: 2, r: -1.8 }, arranged: { x: -3.5, z: -3, r: 0 }, size: 3.5 },
+    { src: "/models/flat_screen_tv.glb", chaos: { x: 4, y: 6, z: 3, r: 0.7 }, arranged: { x: 2.5, z: 3, r: Math.PI }, size: 2.5 },
+    { src: "/models/titanic_lamp.glb", chaos: { x: 5, y: 4, z: -4, r: 2.2 }, arranged: { x: 1.5, z: -3, r: 0 }, size: 1.5 },
   ];
 
   const typeMap: Record<string, string> = {
@@ -136,44 +146,62 @@ const Scene = ({ phase, layoutData, fixedElements, fullHeight }: { phase: "chaos
   const activeItems = layoutData 
     ? layoutData.map((ld: any) => ({
         src: typeMap[ld.type] || "/models/sofa.glb",
-        chaos: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8, r: Math.random() * 4 },
-        arranged: { x: ld.x - 7.5, y: ld.y - 10, r: ld.rotation },
-        size: Math.max(ld.width, ld.depth) * 0.7
+        chaos: { x: (Math.random() - 0.5) * 10, y: 4 + Math.random() * 4, z: (Math.random() - 0.5) * 10, r: Math.random() * 4 },
+        arranged: { x: ld.x - (roomW / 2), z: ld.y - (roomL / 2), r: ld.rotation },
+        size: Math.max(ld.width, ld.depth) * 0.75
       }))
     : defaultItems;
 
   return (
     <>
-      <ambientLight intensity={1.2} />
-      <directionalLight position={[10, 20, 15]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0001} />
-      <directionalLight position={[-10, -10, 5]} intensity={0.5} color="#8cb3a6" />
-      <SoftShadows size={25} samples={10} focus={0.5} />
+      <ambientLight intensity={1.1} />
+      <directionalLight position={[15, 25, 20]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0001} />
+      <directionalLight position={[-15, 10, -10]} intensity={0.5} color="#8cb3a6" />
       <Environment preset="city" />
       
+      {/* Architectural Room Environment (Floor, Grid, Walls) */}
+      <group>
+        {/* Floor Plane */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+          <planeGeometry args={[roomW, roomL]} />
+          <meshStandardMaterial color="#f2eee8" roughness={0.8} metalness={0.05} />
+        </mesh>
+        
+        {/* Floor Grid */}
+        <gridHelper args={[Math.max(roomW, roomL), Math.max(roomW, roomL), "#cbc9bf", "#e2dfe5"]} position={[0, 0.01, 0]} />
+
+        {/* Back Wall */}
+        <mesh position={[0, 2, -roomL / 2]} receiveShadow castShadow>
+          <boxGeometry args={[roomW, 4, 0.3]} />
+          <meshStandardMaterial color="#e9e5de" roughness={0.9} />
+        </mesh>
+
+        {/* Left Side Wall */}
+        <mesh position={[-roomW / 2, 2, 0]} receiveShadow castShadow>
+          <boxGeometry args={[0.3, 4, roomL]} />
+          <meshStandardMaterial color="#e5e1da" roughness={0.9} />
+        </mesh>
+      </group>
+      
       {/* Structural Elements (Doors & Windows) */}
-      {phase === "arranged" && fixedElements && (
+      {fixedElements && (
         <group>
           {fixedElements.map((el, i) => {
-            // Coordinate mapping to center the room at 0,0
-            // Assuming room is 15x20 for visual centering offset (X: -7.5, Y: -10)
-            let x = 0; let y = 0; let rotation = 0;
-            const roomW = 15; const roomL = 20; // Default assumption for visuals if not provided
-            
-            if (el.wall === 'top') { x = el.position - (roomW/2); y = -(roomL/2); rotation = 0; }
-            else if (el.wall === 'bottom') { x = el.position - (roomW/2); y = (roomL/2); rotation = 0; }
-            else if (el.wall === 'left') { x = -(roomW/2); y = el.position - (roomL/2); rotation = Math.PI/2; }
-            else if (el.wall === 'right') { x = (roomW/2); y = el.position - (roomL/2); rotation = Math.PI/2; }
+            let x = 0; let z = 0; let rotation = 0;
+            if (el.wall === 'top') { x = el.position - (roomW/2); z = -(roomL/2); rotation = 0; }
+            else if (el.wall === 'bottom') { x = el.position - (roomW/2); z = (roomL/2); rotation = 0; }
+            else if (el.wall === 'left') { x = -(roomW/2); z = el.position - (roomL/2); rotation = Math.PI/2; }
+            else if (el.wall === 'right') { x = (roomW/2); z = el.position - (roomL/2); rotation = Math.PI/2; }
 
             return (
-              <group key={`struct-${i}`} position={[x, y, 0]} rotation={[0, 0, rotation]}>
-                <mesh position={[0, el.type === 'window' ? 1.5 : 0.5, 0]}>
-                  <boxGeometry args={[el.width, el.type === 'window' ? 1 : 2, 0.5]} />
+              <group key={`struct-${i}`} position={[x, el.type === 'window' ? 2 : 1, z]} rotation={[0, rotation, 0]}>
+                <mesh castShadow receiveShadow>
+                  <boxGeometry args={[el.width, el.type === 'window' ? 1.5 : 2.5, 0.5]} />
                   <meshStandardMaterial 
                     color={el.type === 'window' ? "#88ccff" : "#8b5a2b"} 
                     transparent={el.type === 'window'} 
                     opacity={el.type === 'window' ? 0.6 : 1}
                     roughness={0.8}
-                    metalness={0.1}
                   />
                 </mesh>
               </group>
@@ -182,6 +210,7 @@ const Scene = ({ phase, layoutData, fixedElements, fullHeight }: { phase: "chaos
         </group>
       )}
 
+      {/* Furniture Models */}
       <group>
         {activeItems.map((item, i) => (
           <FurnitureModel
@@ -205,11 +234,21 @@ interface WebGLHeroProps {
   hasGenerated?: boolean;
   layoutData?: any[];
   fixedElements?: any[];
+  room?: { width: number; length: number };
   showText?: boolean;
   fullHeight?: boolean;
 }
 
-const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGenerated, layoutData, fixedElements, showText = true, fullHeight = true }) => {
+const WebGLHero: React.FC<WebGLHeroProps> = ({ 
+  onGenerate, 
+  isGenerating, 
+  hasGenerated, 
+  layoutData, 
+  fixedElements, 
+  room,
+  showText = true, 
+  fullHeight = true 
+}) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
   useEffect(() => {
@@ -237,16 +276,26 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({ onGenerate, isGenerating, hasGene
   return (
     <section className={`relative ${fullHeight ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden bg-background`}>
       {/* 3D Canvas Background */}
-      <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
+      <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-75 pointer-events-none" : "opacity-100"}`}>
         <Canvas 
-          camera={{ position: [0, 0, 15], fov: 40 }}
+          camera={{ position: fullHeight ? [0, 16, 18] : [0, 18, 22], fov: 42 }}
           shadows
           dpr={[1, 2]}
-          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         >
-          {!fullHeight && <OrbitControls makeDefault enableZoom={true} enablePan={true} enableDamping dampingFactor={0.05} maxPolarAngle={Math.PI / 2 + 0.1} />}
+          {!fullHeight && (
+            <OrbitControls 
+              makeDefault 
+              enableZoom={true} 
+              enablePan={true} 
+              enableDamping 
+              dampingFactor={0.05} 
+              maxPolarAngle={Math.PI / 2 - 0.05}
+              target={[0, 0, 0]} 
+            />
+          )}
           <Suspense fallback={null}>
-            <Scene phase={phase} layoutData={layoutData} fixedElements={fixedElements} fullHeight={fullHeight} />
+            <Scene phase={phase} layoutData={layoutData} fixedElements={fixedElements} fullHeight={fullHeight} room={room} />
           </Suspense>
         </Canvas>
       </div>

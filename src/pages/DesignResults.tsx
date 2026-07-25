@@ -14,26 +14,30 @@ const DesignResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Retrieve the generated data from router state or URL (if shared)
   const searchParams = new URLSearchParams(location.search);
-  const sharedData = searchParams.get('data');
+  const shareId = searchParams.get('shareId');
   
-  let parsedSharedData = null;
-  if (sharedData) {
-    try {
-      parsedSharedData = { options: [JSON.parse(atob(sharedData))] };
-    } catch (e) {
-      console.error("Invalid share link", e);
-    }
-  }
-
   const { data: initialData, payloadToUse } = location.state || {};
   
   const [activeOptionIndex, setActiveOptionIndex] = useState(0);
-  const [currentData, setCurrentData] = useState(parsedSharedData || initialData);
+  const [currentData, setCurrentData] = useState(initialData);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || (parsedSharedData ? parsedSharedData.options[0].id.split('_')[0] : "cozy"));
+  const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || "cozy");
+
+  React.useEffect(() => {
+    if (shareId) {
+      fetch(`http://localhost:5000/api/genome/${shareId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            setCurrentData({ options: [data] });
+            setCurrentVibe(data.id.split('_')[0]);
+          }
+        })
+        .catch(err => console.error("Failed to load shared genome:", err));
+    }
+  }, [shareId]);
 
   const handleVibeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVibe = e.target.value;
@@ -78,13 +82,21 @@ const DesignResults = () => {
 
   const handleShare = async () => {
     try {
-      const encoded = btoa(JSON.stringify(activeOption));
-      const url = `${window.location.origin}${window.location.pathname}?data=${encoded}`;
+      // Create a clean payload without circular refs or huge arrays if any, just activeOption
+      const response = await fetch("http://localhost:5000/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activeOption)
+      });
+      
+      const { id } = await response.json();
+      
+      const url = `${window.location.origin}/results?shareId=${id}`;
       await navigator.clipboard.writeText(url);
-      alert("Shareable URL copied to clipboard!");
+      alert("Shareable URL copied to clipboard: " + url);
     } catch (e) {
       console.error("Failed to copy URL", e);
-      alert("Failed to create shareable link. Layout might be too complex.");
+      alert("Failed to create shareable link.");
     }
   };
 
@@ -136,6 +148,8 @@ const DesignResults = () => {
           isGenerating={false} 
           hasGenerated={true}
           layoutData={activeOption?.layout}
+          fixedElements={payloadToUse?.structuralElements}
+          room={payloadToUse?.room}
           showText={false}
           fullHeight={false}
         />
