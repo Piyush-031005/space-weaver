@@ -1,14 +1,19 @@
 import React from "react";
-import { Check } from "lucide-react";
+import { Check, Sparkles, ShieldCheck } from "lucide-react";
 
 interface LayoutOption {
   id: string;
   name: string;
   desc: string;
+  viralBadge?: string;
+  bestFor?: string;
+  philosophyDescription?: string;
+  confidence?: number;
   layout: any[];
-  clearanceScores: any;
-  genome: any;
-  roast: string[];
+  clearanceScores?: any;
+  genome?: any;
+  roast?: string[];
+  droppedItems?: any[];
 }
 
 interface LayoutGalleryProps {
@@ -22,26 +27,28 @@ interface LayoutGalleryProps {
 const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, room, unit = 'ft' }) => {
   if (!options || options.length === 0) return null;
 
-  // Default room if not provided
   const rWidth = room?.width || 20;
   const rLength = room?.length || 20;
 
   return (
     <section className="py-12 bg-muted/20 border-t border-border/50">
       <div className="container mx-auto px-6">
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="font-display font-semibold text-3xl mb-3">Generated Layouts</h2>
-          <p className="text-muted-foreground">
-            Our spatial AI generated multiple ways to arrange your room. Click on a layout below to instantly see the furniture reconfigure in 3D.
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold uppercase tracking-widest mb-3">
+            <Sparkles size={14} /> AI Design Philosophies
+          </div>
+          <h2 className="font-display font-semibold text-3xl md:text-4xl text-foreground mb-3">
+            Three Curated Spatial Philosophies
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base">
+            Instead of generic variations, our Human Spatial Reasoning Engine (HSRE) generated three distinct expert design philosophies for your room. Select a philosophy below to explore its invisible neural relationships in 3D.
           </p>
         </div>
 
-        {/* Change grid to handle 6 options nicely */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {options.map((opt, idx) => {
             const isSelected = activeIndex === idx;
             const clearance = opt.clearanceScores;
-            const isSpaceSaver = opt.id.includes('space_saver');
 
             return (
               <div
@@ -50,66 +57,69 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                   onSelect(idx);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className={`group relative cursor-pointer overflow-hidden rounded-2xl border transition-all duration-300 p-6 flex flex-col h-full ${
+                className={`group relative cursor-pointer overflow-hidden rounded-3xl border transition-all duration-300 p-6 flex flex-col h-full ${
                   isSelected 
-                    ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
-                    : "border-border/50 bg-background hover:border-primary/50 hover:shadow-lg hover:scale-[1.02]"
+                    ? "border-primary bg-primary/5 shadow-xl scale-[1.02] ring-2 ring-primary/20" 
+                    : "border-border/60 bg-background hover:border-primary/50 hover:shadow-lg hover:scale-[1.01]"
                 }`}
               >
                 {isSelected && (
-                  <div className="absolute top-4 right-4 bg-primary text-primary-foreground p-1 rounded-full shadow-sm">
-                    <Check size={14} strokeWidth={3} />
+                  <div className="absolute top-5 right-5 bg-primary text-primary-foreground p-1.5 rounded-full shadow-md z-10 animate-pulse">
+                    <Check size={16} strokeWidth={3} />
                   </div>
                 )}
                 
-                <div className="mb-4 inline-flex px-3 py-1 bg-muted rounded-full text-[10px] uppercase font-bold tracking-widest text-muted-foreground self-start">
-                  Option {idx + 1}
+                {/* Viral & Confidence Badges */}
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent/15 text-accent border border-accent/30 rounded-full text-[11px] font-bold tracking-wide">
+                    <Sparkles size={12} /> {opt.viralBadge || "AI Curated"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-full text-[11px] font-bold tracking-wide">
+                    <ShieldCheck size={12} /> {opt.confidence || 95}% Match
+                  </span>
                 </div>
                 
-                <h3 className={`text-xl font-bold mb-2 ${isSelected ? "text-primary" : "text-foreground"}`}>
+                <h3 className={`text-2xl font-display font-bold mb-1 ${isSelected ? "text-primary" : "text-foreground"}`}>
                   {opt.name}
                 </h3>
                 
-                <p className="text-sm text-muted-foreground mb-4 flex-grow">
-                  {opt.desc}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Best For: <span className="text-foreground">{opt.bestFor || "Optimal living"}</span>
+                </p>
+                
+                <p className="text-sm text-muted-foreground/90 mb-5 flex-grow leading-relaxed">
+                  {opt.philosophyDescription || opt.desc}
                 </p>
 
                 {/* Metrics */}
                 {clearance?.spaceSavedPercentage !== undefined && (
-                  <div className="mb-4 flex flex-col gap-2">
-                    <div className="flex gap-4 text-xs font-medium">
-                      <div className="flex flex-col">
-                        <span className="text-muted-foreground">Space Saved</span>
-                        <span className="text-accent">{clearance.spaceSavedPercentage}%</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-muted-foreground">Free Area</span>
-                        <span className="text-foreground">{Math.round(clearance.freeSpaceArea)} sq {unit}</span>
-                      </div>
+                  <div className="mb-5 grid grid-cols-2 gap-3 p-3 bg-muted/40 rounded-2xl border border-border/40 text-xs font-medium">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground text-[11px]">Space Efficiency</span>
+                      <span className="text-accent font-bold text-sm">{clearance.spaceSavedPercentage}% Free</span>
                     </div>
-                    {opt.droppedItems && opt.droppedItems.length > 0 && (
-                      <div className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-md inline-block self-start mt-1">
-                        Housefull! {opt.droppedItems.length} {opt.droppedItems.length === 1 ? 'item' : 'items'} left out.
-                      </div>
-                    )}
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground text-[11px]">Recovered Area</span>
+                      <span className="text-foreground font-bold text-sm">{Math.round(clearance.freeSpaceArea)} sq {unit}</span>
+                    </div>
                   </div>
                 )}
 
                 {/* Accurate Blueprint Visualization */}
-                <div className={`h-40 w-full rounded-xl border flex items-center justify-center overflow-hidden bg-[#1e293b] ${isSelected ? "border-primary shadow-md" : "border-border/50"}`}>
+                <div className={`h-44 w-full rounded-2xl border flex items-center justify-center overflow-hidden bg-[#0f172a] relative ${isSelected ? "border-primary shadow-inner" : "border-border/50"}`}>
                   <svg 
                     viewBox={`-1 -1 ${rWidth + 2} ${rLength + 2}`} 
-                    className="w-full h-full p-2 drop-shadow-sm"
+                    className="w-full h-full p-3 drop-shadow-md"
                     preserveAspectRatio="xMidYMid meet"
                   >
                     {/* Background Grid */}
                     <pattern id={`grid-${opt.id}`} width="2" height="2" patternUnits="userSpaceOnUse">
-                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.1" />
+                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.1" />
                     </pattern>
                     <rect width={rWidth} height={rLength} fill={`url(#grid-${opt.id})`} />
                     
                     {/* True Room Boundary */}
-                    <rect width={rWidth} height={rLength} fill="none" stroke="rgba(255, 255, 255, 0.8)" strokeWidth="0.4" />
+                    <rect width={rWidth} height={rLength} fill="none" stroke="rgba(255, 255, 255, 0.7)" strokeWidth="0.4" rx="0.3" />
 
                     {/* Furniture Layout */}
                     {opt.layout.map((item, i) => (
@@ -117,22 +127,23 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                         key={`${item.id}-${i}`}
                         transform={`translate(${item.x}, ${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}
                       >
-                          <rect 
+                        <rect 
                           x={-item.width / 2} 
                           y={-item.depth / 2} 
                           width={item.width} 
                           height={item.depth} 
-                          fill="rgba(255, 255, 255, 0.2)" 
+                          fill={item.type === 'sofa' ? "rgba(59, 130, 246, 0.35)" : item.type === 'table' ? "rgba(16, 185, 129, 0.35)" : "rgba(255, 255, 255, 0.18)"} 
                           stroke="rgba(255, 255, 255, 0.9)"
-                          strokeWidth="0.2"
+                          strokeWidth="0.25"
+                          rx="0.2"
                         />
                         {/* Type Label */}
                         <text 
                           x="0" 
                           y="0" 
-                          fontSize={Math.min(item.width, item.depth) * 0.3} 
+                          fontSize={Math.min(item.width, item.depth) * 0.32} 
                           fill="white" 
-                          className="font-semibold"
+                          className="font-bold tracking-tight"
                           textAnchor="middle" 
                           alignmentBaseline="middle"
                         >
@@ -141,11 +152,14 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                       </g>
                     ))}
                   </svg>
+                  <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] text-white/80 font-mono">
+                    2D HSRE Blueprint
+                  </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-border/50">
-                  <button className={`w-full py-2 rounded-lg text-sm font-semibold transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary'}`}>
-                    {isSelected ? 'Currently Viewing in 3D' : 'View in 3D & Analyze'}
+                <div className="mt-5 pt-4 border-t border-border/50">
+                  <button className={`w-full py-3 rounded-xl text-sm font-semibold transition-all shadow-sm ${isSelected ? 'bg-primary text-primary-foreground shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}>
+                    {isSelected ? 'Currently Viewing in 3D' : 'Explore Philosophy in 3D'}
                   </button>
                 </div>
               </div>
