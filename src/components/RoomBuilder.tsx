@@ -392,8 +392,6 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                 </div>
               </section>
 
-              </section>
-
               {/* Step 4: Budget */}
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-accent">4. Budget Tier</h3>

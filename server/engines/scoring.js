@@ -90,12 +90,21 @@ export function scorePlacement(room, fixedElements, furniture, vibe, variationIn
     
     // Collision Resolution Loop
     const checkOverlap = (p1, p2) => {
-      const buffer = 0.5;
+      // Default buffer for normal furniture
+      let buffer = 0.5;
       
       const getAABB = (p) => {
         const theta = p.rotation || 0;
-        const w = Math.abs(p.width * Math.cos(theta)) + Math.abs(p.depth * Math.sin(theta));
-        const d = Math.abs(p.width * Math.sin(theta)) + Math.abs(p.depth * Math.cos(theta));
+        let w = Math.abs(p.width * Math.cos(theta)) + Math.abs(p.depth * Math.sin(theta));
+        let d = Math.abs(p.width * Math.sin(theta)) + Math.abs(p.depth * Math.cos(theta));
+        
+        // Door swing keep-out zone logic
+        if (p.type === 'door') {
+           // Expand the perceived bounding box of a door by 3 units to represent the swing/standing clearance
+           w += 3;
+           d += 3;
+        }
+        
         return { w, d };
       };
 
