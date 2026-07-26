@@ -397,8 +397,8 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
         <Canvas 
           camera={{ position: fullHeight ? [0, 16, 18] : [0, 18, 22], fov: 42 }}
           shadows
-          dpr={[1, 1.5]}
-          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, powerPreference: "high-performance" }}
+          dpr={[1, 1.2]}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
         >
           {!fullHeight && (
             <OrbitControls 
