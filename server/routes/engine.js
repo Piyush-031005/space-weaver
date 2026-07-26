@@ -38,7 +38,7 @@ router.post('/generate-layout', async (req, res) => {
     // 2. Build Relationship Graph
     const graphResult = buildRelationshipGraph(furniture, focalPoint);
 
-    // 3. Generate 3 Cinematic Expert Philosophies (Curator, Architect, Humanist)
+    // 3. Generate 12 Expert Interior Design Configurations
     const philosophyLayouts = generateAllPhilosophies(room, furniture, fixedElements, focalPoint);
     const options = [];
 
@@ -58,15 +58,15 @@ router.post('/generate-layout', async (req, res) => {
         ph.layout, 
         room, 
         focalPoint, 
-        ph.id.replace('philosophy-', 'the_'), 
+        ph.id, 
         affordanceResult, 
         circulationResult
       );
 
       options.push({
         id: ph.id,
-        name: ph.title,
-        desc: ph.tagline,
+        name: ph.name || ph.title,
+        desc: ph.desc || ph.tagline,
         viralBadge: ph.viralBadge,
         bestFor: ph.bestFor,
         philosophyDescription: ph.philosophyDescription,
