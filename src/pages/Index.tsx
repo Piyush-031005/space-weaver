@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import WebGLHero from "@/components/WebGLHero";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
 import Footer from "@/components/Footer";
 import RoomBuilder from "@/components/RoomBuilder";
 import SpaceGenomePreview from "@/components/SpaceGenomePreview";
+import RealHomeShowcase from "@/components/RealHomeShowcase";
+import { Cpu } from "lucide-react";
+
+// Lazy load 3D WebGL Canvas for 90+ Lighthouse Performance
+const WebGLHero = React.lazy(() => import("@/components/WebGLHero"));
 
 export interface RoomPayload {
   room: { width: number; length: number };
@@ -17,22 +21,33 @@ export interface RoomPayload {
   unit?: string;
 }
 
+const HeroFallback = () => (
+  <div className="h-[75vh] w-full bg-background flex flex-col items-center justify-center p-6 text-center border-b border-border/50">
+    <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 animate-pulse">
+      <Cpu className="text-primary animate-spin" size={28} />
+    </div>
+    <h2 className="text-2xl md:text-4xl font-display font-bold text-foreground mb-2">
+      Initializing 3D Spatial Intelligence...
+    </h2>
+    <p className="text-muted-foreground text-sm max-w-md">
+      Loading interactive 3D room builder, real-time lighting simulation, and ergonomic layout engines.
+    </p>
+  </div>
+);
+
 const Index = () => {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   
-  // Store the user's custom payload
   const [currentPayload, setCurrentPayload] = useState<RoomPayload | null>(null);
 
   const handleGenerate = async (customPayload?: RoomPayload | React.SyntheticEvent) => {
     setIsGenerating(true);
     
-    // Check if customPayload is actually a React event
     const isEvent = customPayload && ('nativeEvent' in customPayload || 'target' in customPayload);
     const validPayload = isEvent ? null : (customPayload as RoomPayload);
 
-    // If no valid custom payload, use the stored one or a fallback
     const payloadToUse = validPayload || currentPayload || {
       room: { width: 15, length: 20 },
       fixedElements: [],
@@ -46,7 +61,7 @@ const Index = () => {
 
     if (validPayload) {
       setCurrentPayload(validPayload);
-      setIsBuilderOpen(false); // Close the sidebar on generation
+      setIsBuilderOpen(false);
     }
 
     try {
@@ -58,7 +73,6 @@ const Index = () => {
       
       const data = await response.json();
       
-      // Simulate slight delay for cinematic effect
       setTimeout(() => {
         setIsGenerating(false);
         if (data && data.options) {
@@ -75,15 +89,22 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar onGetStarted={() => setIsBuilderOpen(true)} />
-      <WebGLHero 
-        onGenerate={() => setIsBuilderOpen(true)} // Open builder instead of auto-generating
-        isGenerating={isGenerating} 
-        hasGenerated={false}
-        layoutData={undefined}
-      />
       
+      <Suspense fallback={<HeroFallback />}>
+        <WebGLHero 
+          onGenerate={() => setIsBuilderOpen(true)} 
+          isGenerating={isGenerating} 
+          hasGenerated={false}
+          layoutData={undefined}
+        />
+      </Suspense>
+      
+      {/* Real Home Transformations Showcase (4K Photography & Practical Stories) */}
+      <RealHomeShowcase />
+
+      {/* Practical Room Harmony & Lifestyle Analysis (Friendly Language) */}
       <SpaceGenomePreview />
 
       <AffiliateShowcase />

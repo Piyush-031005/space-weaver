@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
-import WebGLHero from "@/components/WebGLHero";
+const WebGLHero = React.lazy(() => import("@/components/WebGLHero"));
 import SpaceDNA from "@/components/SpaceDNA";
 import LayoutGallery from "@/components/LayoutGallery";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
@@ -183,18 +183,20 @@ const DesignResults = () => {
       {/* 3D Viewer for the selected layout with AI Timeline Loader */}
       <div className="flex-none h-[48vh] relative border-b border-border/50 overflow-hidden">
         <AITimelineLoader active={isGenerating} />
-        <WebGLHero 
-          onGenerate={() => {}} 
-          isGenerating={isGenerating} 
-          hasGenerated={true}
-          layoutData={activeOption?.layout}
-          fixedElements={payloadToUse?.structuralElements}
-          room={payloadToUse?.room}
-          focalPoint={currentData?.focalPoint}
-          showAIThinking={true}
-          showText={false}
-          fullHeight={false}
-        />
+        <Suspense fallback={<div className="h-full w-full bg-background flex items-center justify-center text-primary font-mono text-sm">Loading 3D Spatial Visualization...</div>}>
+          <WebGLHero 
+            onGenerate={() => {}} 
+            isGenerating={isGenerating} 
+            hasGenerated={true}
+            layoutData={activeOption?.layout}
+            fixedElements={payloadToUse?.structuralElements}
+            room={payloadToUse?.room}
+            focalPoint={currentData?.focalPoint}
+            showAIThinking={true}
+            showText={false}
+            fullHeight={false}
+          />
+        </Suspense>
         <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-xs text-white font-medium flex items-center gap-2 border border-white/10">
           <Layers size={14} className="text-primary" /> Active Philosophy: <span className="font-bold text-primary">{activeOption?.name}</span>
         </div>
