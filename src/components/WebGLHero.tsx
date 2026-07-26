@@ -1,10 +1,108 @@
 import React, { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Environment, OrbitControls } from "@react-three/drei";
+import { useGLTF, Environment, OrbitControls, Line } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+
+// AI Thinking Visualization Overlay (HSRE Layer)
+const AIThinkingOverlay = ({ 
+  layoutData, 
+  focalPoint, 
+  roomW, 
+  roomL, 
+  active 
+}: { 
+  layoutData?: any[]; 
+  focalPoint?: any; 
+  roomW: number; 
+  roomL: number; 
+  active: boolean;
+}) => {
+  const [step, setStep] = useState(0);
+  const [opacity, setOpacity] = useState(1);
+
+  useEffect(() => {
+    if (!active || !layoutData) return;
+    setStep(0);
+    setOpacity(1);
+
+    const t1 = setTimeout(() => setStep(1), 300); // Step 1: Focal point detected
+    const t2 = setTimeout(() => setStep(2), 900); // Step 2: Neural relationship graph lines
+    const t3 = setTimeout(() => setStep(3), 1600); // Step 3: Conversation circle & walkways
+    const t4 = setTimeout(() => setStep(4), 2400); // Step 4: All layers visible
+    const t5 = setTimeout(() => {
+      // Step 5: Smoothly fade out analytical helper overlays
+      gsap.to({ val: 1 }, {
+        val: 0,
+        duration: 1.5,
+        onUpdate: function() {
+          setOpacity(this.targets()[0].val);
+        },
+        onComplete: () => setStep(5)
+      });
+    }, 4200);
+
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
+    };
+  }, [layoutData, active]);
+
+  if (!active || !layoutData || step === 5 || opacity <= 0.05) return null;
+
+  const sofas = layoutData.filter(f => (f.type || '').toLowerCase() === 'sofa');
+  const tvs = layoutData.filter(f => (f.type || '').toLowerCase() === 'tv');
+  const tables = layoutData.filter(f => (f.type || '').toLowerCase() === 'table');
+
+  const getPos = (item: any) => [item.x - (roomW / 2), 0.5, item.z !== undefined ? item.z : item.y - (roomL / 2)] as [number, number, number];
+
+  return (
+    <group>
+      {/* Step 1 & 4: Focal Point Pulse Ring */}
+      {(step >= 1) && (tvs.length > 0 || focalPoint) && (
+        <group position={tvs.length > 0 ? getPos(tvs[0]) : [0, 0.5, -roomL/2 + 1]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[1.2, 1.6, 32]} />
+            <meshBasicMaterial color="#00ffff" transparent opacity={opacity * 0.8} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Step 2 & 4: Neural Relationship Graph Lines */}
+      {(step >= 2) && (
+        <group>
+          {sofas.map((sofa, i) => {
+            const sofaPos = getPos(sofa);
+            const targetPos = tvs.length > 0 ? getPos(tvs[0]) : [0, 0.5, -roomL/2];
+            const tablePos = tables.length > 0 ? getPos(tables[0]) : null;
+            return (
+              <React.Fragment key={`rel-${i}`}>
+                <Line points={[sofaPos, targetPos]} color="#3b82f6" lineWidth={2} transparent opacity={opacity * 0.75} dashed dashSize={0.5} gapSize={0.2} />
+                {tablePos && (
+                  <Line points={[sofaPos, tablePos]} color="#10b981" lineWidth={1.5} transparent opacity={opacity * 0.65} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </group>
+      )}
+
+      {/* Step 3 & 4: Conversation Zone Floor Circle & 36" Walkway Corridor */}
+      {(step >= 3) && (
+        <group>
+          {/* Soft purple conversation floor zone */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+            <ringGeometry args={[3, 5, 48]} />
+            <meshBasicMaterial color="#8b5cf6" transparent opacity={opacity * 0.3} side={THREE.DoubleSide} />
+          </mesh>
+          {/* Main door circulation corridor line */}
+          <Line points={[[0, 0.05, roomL/2], [0, 0.05, 0]]} color="#f59e0b" lineWidth={2.5} dashed dashSize={0.6} gapSize={0.3} transparent opacity={opacity * 0.85} />
+        </group>
+      )}
+    </group>
+  );
+};
 
 // A single 3D Furniture piece
 const FurnitureModel = ({
@@ -95,19 +193,23 @@ const FurnitureModel = ({
   );
 };
 
-// Scene wrapper with Architectural Floor, Walls, Grid, and Lights
+// Scene wrapper with Architectural Floor, Walls, Grid, and AI Thinking Overlay
 const Scene = ({ 
   phase, 
   layoutData, 
   fixedElements, 
   fullHeight, 
-  room 
+  room,
+  focalPoint,
+  showAIThinking = false
 }: { 
   phase: "chaos" | "arranging" | "arranged"; 
   layoutData?: any[]; 
   fixedElements?: any[]; 
   fullHeight: boolean;
   room?: { width: number; length: number };
+  focalPoint?: any;
+  showAIThinking?: boolean;
 }) => {
   const { camera, pointer } = useThree();
   const roomW = room?.width || 15;
@@ -155,10 +257,21 @@ const Scene = ({
   return (
     <>
       <ambientLight intensity={1.1} />
-      <directionalLight position={[15, 25, 20]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0001} />
+      <directionalLight position={[15, 25, 20]} intensity={1.6} castShadow shadow-mapSize={[512, 512]} shadow-bias={-0.0001} />
       <directionalLight position={[-15, 10, -10]} intensity={0.5} color="#8cb3a6" />
       <Environment preset="city" />
       
+      {/* AI Thinking Animation Overlay */}
+      {phase === "arranged" && !fullHeight && (
+        <AIThinkingOverlay 
+          layoutData={layoutData} 
+          focalPoint={focalPoint} 
+          roomW={roomW} 
+          roomL={roomL} 
+          active={true} 
+        />
+      )}
+
       {/* Architectural Room Environment (Floor, Grid, Walls) */}
       <group>
         {/* Floor Plane */}
@@ -235,6 +348,8 @@ interface WebGLHeroProps {
   layoutData?: any[];
   fixedElements?: any[];
   room?: { width: number; length: number };
+  focalPoint?: any;
+  showAIThinking?: boolean;
   showText?: boolean;
   fullHeight?: boolean;
 }
@@ -246,6 +361,8 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
   layoutData, 
   fixedElements, 
   room,
+  focalPoint,
+  showAIThinking = false,
   showText = true, 
   fullHeight = true 
 }) => {
@@ -275,13 +392,13 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
 
   return (
     <section className={`relative ${fullHeight ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden bg-background`}>
-      {/* 3D Canvas Background */}
+      {/* 3D Canvas Background - Optimized DPR for Lighthouse 100 Performance */}
       <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-75 pointer-events-none" : "opacity-100"}`}>
         <Canvas 
           camera={{ position: fullHeight ? [0, 16, 18] : [0, 18, 22], fov: 42 }}
           shadows
-          dpr={[1, 2]}
-          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, powerPreference: "high-performance" }}
         >
           {!fullHeight && (
             <OrbitControls 
@@ -295,7 +412,15 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
             />
           )}
           <Suspense fallback={null}>
-            <Scene phase={phase} layoutData={layoutData} fixedElements={fixedElements} fullHeight={fullHeight} room={room} />
+            <Scene 
+              phase={phase} 
+              layoutData={layoutData} 
+              fixedElements={fixedElements} 
+              fullHeight={fullHeight} 
+              room={room}
+              focalPoint={focalPoint}
+              showAIThinking={showAIThinking}
+            />
           </Suspense>
         </Canvas>
       </div>
