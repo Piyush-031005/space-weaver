@@ -308,10 +308,10 @@ const Scene = ({
             if (el.x !== undefined && el.y !== undefined) {
               x = el.x - (roomW / 2);
               z = el.y - (roomL / 2);
-            } else if (el.wall === 'top') { x = (el.position || 0) - (roomW/2); z = -(roomL/2); rotation = 0; }
-            else if (el.wall === 'bottom') { x = (el.position || 0) - (roomW/2); z = (roomL/2); rotation = 0; }
-            else if (el.wall === 'left') { x = -(roomW/2); z = (el.position || 0) - (roomL/2); rotation = Math.PI/2; }
-            else if (el.wall === 'right') { x = (roomW/2); z = (el.position || 0) - (roomL/2); rotation = Math.PI/2; }
+            } else if (el.wall === 'top') { x = (el.position || 0) - (roomW/2); z = -(roomL/2); rotation = el.rotation !== undefined ? el.rotation : 0; }
+            else if (el.wall === 'bottom') { x = (el.position || 0) - (roomW/2); z = (roomL/2); rotation = el.rotation !== undefined ? el.rotation : 0; }
+            else if (el.wall === 'left') { x = -(roomW/2); z = (el.position || 0) - (roomL/2); rotation = el.rotation !== undefined ? el.rotation : Math.PI/2; }
+            else if (el.wall === 'right') { x = (roomW/2); z = (el.position || 0) - (roomL/2); rotation = el.rotation !== undefined ? el.rotation : Math.PI/2; }
 
             const isPillar = el.type === 'pillar' || el.type === 'column';
             const isBeam = el.type === 'beam';
