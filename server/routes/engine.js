@@ -1,5 +1,5 @@
 import express from 'express';
-import { checkCollisions } from '../engines/collision.js';
+import { checkCollisions, resolveCollisions } from '../engines/collision.js';
 import { calculateClearance } from '../engines/clearance.js';
 import { generateGenome } from '../engines/genome.js';
 import { generateRoast } from '../engines/critic.js';
@@ -43,6 +43,7 @@ router.post('/generate-layout', async (req, res) => {
     const options = [];
 
     for (const ph of philosophyLayouts) {
+      ph.layout = resolveCollisions(ph.layout, room);
       const collisions = checkCollisions(ph.layout);
       const clearanceScores = calculateClearance(room, fixedElements, ph.layout);
       const genome = generateGenome(clearanceScores);

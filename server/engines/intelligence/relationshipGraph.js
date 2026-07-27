@@ -130,6 +130,25 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
     });
   }
 
+  // 3b. Place Secondary & Tertiary Tables (Side Tables / Accent Tables)
+  if (tables.length > 1) {
+    tables.slice(1).forEach((table, idx) => {
+      const isLeft = idx % 2 === 0;
+      let xPos = isLeft ? centerX - 6 : centerX + 6;
+      let yPos = primarySofaY;
+      if (idx >= 2) {
+        xPos = isLeft ? 2.5 : roomW - 2.5;
+        yPos = 3 + idx * 3;
+      }
+      layout.push({
+        ...table,
+        x: Math.max(1.5, Math.min(roomW - 1.5, xPos)),
+        y: Math.max(1.5, Math.min(roomL - 1.5, yPos)),
+        rotation: 0
+      });
+    });
+  }
+
   // 4. Place Secondary & Tertiary Sofas (STRICT 180° FACE-TO-FACE OR 90° L-SHAPE!)
   if (sofas.length >= 2) {
     sofas.slice(1).forEach((sofa, idx) => {
@@ -141,14 +160,14 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
         layout.push({
           ...sofa,
           x: centerX,
-          y: Math.max(2.5, primarySofaY - gapY),
+          y: Math.max(2.5, primarySofaY - gapY - (idx * 3.5)),
           rotation: 0 // strictly facing opposite Primary Sofa!
         });
       } else if (mode.includes("L_SHAPE_RIGHT") || mode === "COZY_RETREAT") {
         // 90° L-Shape on Right Side
         layout.push({
           ...sofa,
-          x: Math.min(roomW - 3, centerX + 4.5),
+          x: Math.min(roomW - 3, centerX + 4.5 + (idx * 2)),
           y: primarySofaY - 2.5,
           rotation: -Math.PI / 2 // facing left toward table center
         });
@@ -156,7 +175,7 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
         // V-Shape Angled 15° inward
         layout.push({
           ...sofa,
-          x: centerX - 4.5,
+          x: centerX - 4.5 - (idx * 2),
           y: primarySofaY - 1.5,
           rotation: Math.PI - 0.3 // angled inward toward TV
         });
@@ -164,7 +183,7 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
         // Left flank of U-Shape
         layout.push({
           ...sofa,
-          x: Math.max(3, centerX - 5),
+          x: Math.max(3, centerX - 5 - (idx * 2)),
           y: primarySofaY - 2.5,
           rotation: Math.PI / 2 // facing right into U hub
         });
@@ -172,7 +191,7 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
         // Default L-Shape Left Corner (Architect / Minimalist / Family Haven)
         layout.push({
           ...sofa,
-          x: Math.max(3, centerX - 4.5),
+          x: Math.max(3, centerX - 4.5 - (idx * 2)),
           y: primarySofaY - 2.8,
           rotation: Math.PI / 2 // facing right toward table center
         });
@@ -180,27 +199,28 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
     });
   }
 
-  // 5. Place Chairs orbiting open conversation perimeter
+  // 5. Place Chairs orbiting open conversation perimeter with distinct offset spacing
   chairs.forEach((chair, i) => {
     const side = i % 2 === 0 ? 1 : -1;
-    let chairX = centerX + (side * 5);
-    let chairY = primarySofaY - 3;
+    const pairIndex = Math.floor(i / 2);
+    let chairX = centerX + (side * (4.8 + pairIndex * 2.0));
+    let chairY = primarySofaY - 3.5 - (pairIndex * 3.2);
     let chairRot = side === 1 ? -Math.PI / 2 : Math.PI / 2;
 
     if (mode === "FACE_TO_FACE_CENTER" || mode === "GRAND_SALON") {
-      chairX = centerX + (side * 5.5);
-      chairY = tableY;
+      chairX = centerX + (side * (5.5 + pairIndex * 1.8));
+      chairY = tableY + (pairIndex % 2 === 0 ? 0 : -3.5);
       chairRot = side === 1 ? -Math.PI / 2 : Math.PI / 2;
     } else if (mode === "U_SHAPE_GATHERING") {
-      chairX = centerX + (side * 4);
-      chairY = primarySofaY - 6.5;
+      chairX = centerX + (side * (4 + pairIndex * 2.2));
+      chairY = primarySofaY - 6.5 - (pairIndex * 2.5);
       chairRot = 0; // facing up into U
     }
 
     layout.push({
       ...chair,
-      x: chairX,
-      y: chairY,
+      x: Math.max(1.5, Math.min(roomW - 1.5, chairX)),
+      y: Math.max(1.5, Math.min(roomL - 1.5, chairY)),
       rotation: chairRot
     });
   });
