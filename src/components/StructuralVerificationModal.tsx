@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, ShieldAlert, Sparkles, Building2, Trash2, ArrowRight, 
@@ -52,6 +52,8 @@ const StructuralVerificationModal: React.FC<StructuralVerificationModalProps> = 
   const [elements, setElements] = useState<StructuralElement[]>(initialStructuralElements || []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<string>("pillar");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen) return null;
 
@@ -275,7 +277,35 @@ const StructuralVerificationModal: React.FC<StructuralVerificationModalProps> = 
 
                     {/* Scaled Room Box */}
                     <div
-                      className="relative border-2 border-primary/60 bg-zinc-900/50 rounded-lg shadow-2xl transition-all"
+                      ref={canvasRef}
+                      onMouseMove={(e) => {
+                        if (!draggingId || !canvasRef.current) return;
+                        const rect = canvasRef.current.getBoundingClientRect();
+                        const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                        const relY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+                        const newX = Number(((relX / rect.width) * rW).toFixed(1));
+                        const newY = Number(((relY / rect.height) * rL).toFixed(1));
+                        setElements(elements.map(el => el.id === draggingId ? { 
+                          ...el, 
+                          x: newX, 
+                          y: newY, 
+                          position: newX 
+                        } : el));
+                      }}
+                      onMouseUp={() => setDraggingId(null)}
+                      onMouseLeave={() => setDraggingId(null)}
+                      onClick={(e) => {
+                        if (selectedId && !draggingId && canvasRef.current && e.target === canvasRef.current) {
+                          const rect = canvasRef.current.getBoundingClientRect();
+                          const relX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+                          const relY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+                          const newX = Number(((relX / rect.width) * rW).toFixed(1));
+                          const newY = Number(((relY / rect.height) * rL).toFixed(1));
+                          handleUpdateActive("x", newX);
+                          handleUpdateActive("y", newY);
+                        }
+                      }}
+                      className="relative border-2 border-primary/60 bg-zinc-900/50 rounded-lg shadow-2xl transition-all cursor-crosshair select-none"
                       style={{
                         width: `${Math.min(100, Math.max(40, (rW / Math.max(rW, rL)) * 85))}%`,
                         height: "240px",
@@ -297,12 +327,20 @@ const StructuralVerificationModal: React.FC<StructuralVerificationModalProps> = 
                         return (
                           <div
                             key={el.id}
-                            onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}
-                            className={`absolute cursor-pointer flex items-center justify-center rounded transition-all select-none ${
+                            onMouseDown={(e) => { 
+                              e.stopPropagation(); 
+                              setSelectedId(el.id); 
+                              setDraggingId(el.id); 
+                            }}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setSelectedId(el.id); 
+                            }}
+                            className={`absolute cursor-move flex items-center justify-center rounded transition-all select-none ${
                               isSelected 
                                 ? "ring-2 ring-white scale-105 z-20 shadow-lg shadow-primary/30" 
                                 : "opacity-90 hover:opacity-100 z-10"
-                            }`}
+                            } ${draggingId === el.id ? "opacity-75 scale-110 shadow-2xl ring-2 ring-primary" : ""}`}
                             style={{
                               left: `${Math.max(0, Math.min(90, leftPct - widthPct/2))}%`,
                               top: `${Math.max(0, Math.min(90, topPct - heightPct/2))}%`,
@@ -311,9 +349,9 @@ const StructuralVerificationModal: React.FC<StructuralVerificationModalProps> = 
                               backgroundColor: toolDef.color,
                               transform: `rotate(${el.rotation || 0}deg)`
                             }}
-                            title={`${toolDef.label} (${el.width}x${el.depth || 1})`}
+                            title={`${toolDef.label} (${el.width}x${el.depth || 1}) - Drag to move`}
                           >
-                            <Icon size={14} className="text-white drop-shadow" />
+                            <Icon size={14} className="text-white drop-shadow pointer-events-none" />
                           </div>
                         );
                       })}
@@ -322,6 +360,10 @@ const StructuralVerificationModal: React.FC<StructuralVerificationModalProps> = 
                           No anchors placed yet. Add tools from above.
                         </div>
                       )}
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 text-xs text-zinc-400 bg-zinc-900/80 px-3.5 py-2 rounded-xl border border-border/40 shadow-sm w-full">
+                      <Move size={15} className="text-primary animate-pulse shrink-0" />
+                      <span>💡 <b>Pro Tip:</b> Drag any item directly on the grid or click anywhere to reposition the active anchor!</span>
                     </div>
                   </div>
 
@@ -394,6 +436,51 @@ const StructuralVerificationModal: React.FC<StructuralVerificationModalProps> = 
                               onChange={(e) => handleUpdateActive("y", Number(e.target.value))}
                               className="w-full bg-background border border-border rounded-lg px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                             />
+                          </div>
+                        </div>
+
+                        {/* Manual Nudge Pad */}
+                        <div className="bg-muted/20 border border-border/50 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                            <span>Interactive Nudge Pad</span>
+                            <span className="text-primary/80 font-normal">Step: 0.5 {unit}</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 w-36 mx-auto">
+                            <div />
+                            <button 
+                              onClick={() => handleUpdateActive("y", Math.max(0, Number(((activeElement.y || 0) - 0.5).toFixed(1))))}
+                              className="p-1.5 bg-background hover:bg-primary/20 hover:text-primary rounded-lg border border-border flex items-center justify-center transition-colors shadow-sm font-bold text-xs"
+                              title="Move Up (North)"
+                            >
+                              ▲
+                            </button>
+                            <div />
+                            <button 
+                              onClick={() => handleUpdateActive("x", Math.max(0, Number(((activeElement.x || 0) - 0.5).toFixed(1))))}
+                              className="p-1.5 bg-background hover:bg-primary/20 hover:text-primary rounded-lg border border-border flex items-center justify-center transition-colors shadow-sm font-bold text-xs"
+                              title="Move Left (West)"
+                            >
+                              ◀
+                            </button>
+                            <div className="flex items-center justify-center text-[9px] font-bold text-muted-foreground tracking-tighter bg-muted/50 rounded-lg border border-border/30 select-none">
+                              MOVE
+                            </div>
+                            <button 
+                              onClick={() => handleUpdateActive("x", Math.min(rW, Number(((activeElement.x || 0) + 0.5).toFixed(1))))}
+                              className="p-1.5 bg-background hover:bg-primary/20 hover:text-primary rounded-lg border border-border flex items-center justify-center transition-colors shadow-sm font-bold text-xs"
+                              title="Move Right (East)"
+                            >
+                              ▶
+                            </button>
+                            <div />
+                            <button 
+                              onClick={() => handleUpdateActive("y", Math.min(rL, Number(((activeElement.y || 0) + 0.5).toFixed(1))))}
+                              className="p-1.5 bg-background hover:bg-primary/20 hover:text-primary rounded-lg border border-border flex items-center justify-center transition-colors shadow-sm font-bold text-xs"
+                              title="Move Down (South)"
+                            >
+                              ▼
+                            </button>
+                            <div />
                           </div>
                         </div>
 
