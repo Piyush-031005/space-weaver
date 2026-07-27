@@ -8,47 +8,27 @@ import AffiliateShowcase from "@/components/AffiliateShowcase";
 import CustomizeOverlay from "@/components/CustomizeOverlay";
 import Fullscreen3DStudio from "@/components/Fullscreen3DStudio";
 import html2canvas from "html2canvas";
-import { ArrowLeft, RefreshCw, Check, Sparkles, ShieldCheck, Cpu, Layers } from "lucide-react";
+import { ArrowLeft, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-// AI Timeline Loader cycling through YC-grade HSRE stages
-const AITimelineLoader = ({ active }: { active: boolean }) => {
-  const stages = [
-    "Analyzing room geometry & wall boundaries...",
-    "Detecting primary focal points (TV / Windows)...",
-    "Building bi-directional relationship graph...",
-    "Simulating 36\" human walking circulation...",
-    "Optimizing cognitive calm & visual clutter...",
-    "Finalizing cinematic layout philosophies..."
-  ];
-  const [stageIdx, setStageIdx] = useState(0);
-
-  useEffect(() => {
-    if (!active) return;
-    setStageIdx(0);
-    const interval = setInterval(() => {
-      setStageIdx((prev) => (prev + 1) % stages.length);
-    }, 700);
-    return () => clearInterval(interval);
-  }, [active]);
-
+// Premium minimal loader — no AI branding, no CPU icons, no HSRE stage text
+const GeneratingLoader = ({ active }: { active: boolean }) => {
   if (!active) return null;
-
   return (
-    <div className="absolute inset-0 bg-background/85 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
-      <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center mb-6 animate-pulse">
-        <Cpu className="text-primary animate-spin" size={32} />
+    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-6 animate-in fade-in duration-300">
+      <div className="flex items-center gap-2">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-foreground"
+            style={{ animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }}
+          />
+        ))}
       </div>
-      <h3 className="text-xl md:text-2xl font-display font-bold text-foreground mb-2">
-        Human Spatial Reasoning Engine (HSRE)
-      </h3>
-      <p className="text-primary font-mono text-sm md:text-base h-6 flex items-center justify-center">
-        {stages[stageIdx]}
+      <p className="text-[11px] font-mono tracking-[0.3em] uppercase text-muted-foreground">
+        Generating arrangements
       </p>
-      <div className="w-48 h-1.5 bg-muted rounded-full mt-6 overflow-hidden">
-        <div className="h-full bg-primary animate-pulse w-full rounded-full" />
-      </div>
     </div>
   );
 };
@@ -197,9 +177,9 @@ const DesignResults = () => {
         </div>
       </div>
 
-      {/* 3D Viewer for the selected layout with AI Timeline Loader */}
+      {/* 3D Viewer for the selected layout */}
       <div className="flex-none h-[48vh] relative border-b border-border/50 overflow-hidden">
-        <AITimelineLoader active={isGenerating} />
+        <GeneratingLoader active={isGenerating} />
         <Suspense fallback={<div className="h-full w-full bg-background flex items-center justify-center text-primary font-mono text-sm">Loading 3D Spatial Visualization...</div>}>
           <WebGLHero 
             onGenerate={() => {}} 
