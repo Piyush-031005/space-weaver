@@ -1,99 +1,112 @@
+import React from "react";
 import { motion } from "framer-motion";
-import { BrainCircuit, Activity, Eye, Focus, Flame, Lock, Users, Maximize, Sparkles, CheckCircle2 } from "lucide-react";
+import { Check, Star, Quote } from "lucide-react";
 
 const SpaceGenomePreview = () => {
-  const metrics = [
-    { label: "Walking Space", value: 85, icon: Activity },
-    { label: "Natural Daylight", value: 92, icon: Eye },
-    { label: "Peace & Calm", value: 88, icon: BrainCircuit },
-    { label: "Work Focus", value: 95, icon: Focus },
-    { label: "Cozy Warmth", value: 90, icon: Flame },
-    { label: "Social Privacy", value: 82, icon: Lock },
-    { label: "Party Gathering", value: 86, icon: Users },
-    { label: "Breathing Room", value: 89, icon: Maximize },
+  const designHighlights = [
+    {
+      title: "Effortless Walking Corridors",
+      description: "We preserve continuous 36-inch walkways from your doorways to seating areas, ensuring you never stumble or squeeze past furniture."
+    },
+    {
+      title: "Natural Daylight Maximization",
+      description: "Seating is oriented to capture warm morning and afternoon daylight while eliminating frustrating glare on television and computer screens."
+    },
+    {
+      title: "Interactive Conversation Circles",
+      description: "By replacing awkward parallel seating with face-to-face and L-shape geometry, your room naturally encourages eye contact and connection."
+    },
+    {
+      title: "Zero Clutter & Breathing Room",
+      description: "We use negative space as an active architectural feature, allowing your room to feel visibly larger and more restful."
+    }
   ];
 
   return (
-    <section className="py-24 bg-background relative overflow-hidden border-t border-border/50">
+    <section className="py-28 bg-background relative overflow-hidden border-t border-border/40">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-semibold uppercase tracking-widest mb-6">
-              <Sparkles size={14} /> Practical Spatial Intelligence
-            </div>
-            <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-6 leading-tight">
-              Every room has its own <br />
-              <span className="italic text-primary font-normal">Natural Harmony</span>.
-            </h2>
-            <p className="text-muted-foreground font-body text-lg leading-relaxed mb-8">
-              We don't just place furniture randomly. Our engine analyzes how you walk, relax, host friends, and watch TV to organize your room for effortless everyday living.
-            </p>
-            <div className="p-6 bg-card border border-border/80 rounded-3xl shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5 text-primary">
-                <BrainCircuit size={100} />
-              </div>
-              <h3 className="font-bold text-sm text-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
-                <CheckCircle2 className="text-primary" size={18} /> Expert Interior Designer Insight:
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed font-medium">
-                "Your living room currently feels cramped near the balcony door. By arranging your sofas in an interactive 180° face-to-face layout across your coffee table, we instantly unlock 42% more walking space!"
-              </p>
-            </div>
-          </motion.div>
+        
+        {/* Editorial Section Header (No Boxes, Pure Typography) */}
+        <div className="max-w-3xl mb-20">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary mb-4">
+            Architectural Philosophy
+          </p>
+          <h2 className="text-4xl md:text-6xl font-display font-bold text-foreground tracking-tight leading-[1.15] mb-6">
+            Every room has its own <br />
+            <span className="italic font-normal text-primary">natural harmony</span>.
+          </h2>
+          <p className="text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
+            We don't use arbitrary algorithms or AI dashboards. Our design engine analyzes human movement, eye sightlines, daylight angles, and daily routines to organize your home like a master interior designer.
+          </p>
+        </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="p-8 lg:p-10 rounded-3xl bg-card border border-border/80 shadow-xl relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {/* 2-Column Editorial Grid (No Box Borders, No Progress Bars!) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          {/* Left Column: Why The Space Breathes */}
+          <div className="lg:col-span-7 space-y-12">
+            <h3 className="text-2xl font-display font-bold text-foreground border-b border-border/40 pb-4">
+              How We Create Spatial Harmony
+            </h3>
             
-            <div className="flex justify-between items-end mb-8 pb-6 border-b border-border/60">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Living Style Profile</p>
-                <h3 className="text-3xl font-display font-bold text-foreground">The Curator Studio</h3>
-              </div>
-              <div className="text-right">
-                <span className="text-3xl font-display font-bold text-primary">94%</span>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Harmony Match</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {metrics.map((m, i) => {
-                const Icon = m.icon;
-                return (
-                  <div key={m.label} className="flex items-center gap-4">
-                    <div className="text-primary flex-shrink-0">
-                      <Icon size={16} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs font-semibold mb-1">
-                        <span className="text-foreground/90">{m.label}</span>
-                        <span className="text-primary font-bold">{m.value}%</span>
-                      </div>
-                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${m.value}%` }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 1, delay: i * 0.08, ease: "easeOut" }}
-                          className="bg-primary h-full rounded-full"
-                        />
-                      </div>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              {designHighlights.map((highlight, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center gap-2 text-primary font-bold">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs">✓</span>
+                    <h4 className="text-lg font-display font-semibold text-foreground">
+                      {highlight.title}
+                    </h4>
                   </div>
-                );
-              })}
+                  <p className="text-sm text-muted-foreground leading-relaxed pl-8">
+                    {highlight.description}
+                  </p>
+                </motion.div>
+              ))}
             </div>
-          </motion.div>
+          </div>
+
+          {/* Right Column: Editorial Homeowner & Designer Review (Replacing AI Progress Bars) */}
+          <div className="lg:col-span-5 lg:pl-8">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="space-y-8"
+            >
+              <div className="flex items-center gap-1 text-amber-500">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={18} fill="currentColor" />
+                ))}
+                <span className="ml-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">5.0 Verified Review</span>
+              </div>
+
+              <blockquote className="text-xl md:text-2xl font-display font-normal italic text-foreground/90 leading-relaxed relative">
+                <Quote className="absolute -top-4 -left-6 text-primary/10 -z-10" size={64} />
+                "SpaceWeaver completely transformed our living room. Instead of feeling cramped by the balcony door, the new arrangement unlocked so much walking space and made our home feel like a professional Scandinavian studio."
+              </blockquote>
+
+              <div className="pt-4 border-t border-border/40">
+                <div className="font-display font-bold text-foreground">Sarah & David Jenkins</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-widest mt-0.5">Homeowners • Stockholm, Sweden</div>
+              </div>
+
+              <div className="pt-6">
+                <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+                  <span>✦ 100% Practical Human Ergonomics</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
         </div>
       </div>
     </section>
