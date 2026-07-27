@@ -40,9 +40,7 @@ router.post('/generate-layout', async (req, res) => {
 
     // 3. Generate 12 Expert Interior Design Configurations
     const philosophyLayouts = generateAllPhilosophies(room, furniture, fixedElements, focalPoint);
-    const options = [];
-
-    for (const ph of philosophyLayouts) {
+    const options = await Promise.all(philosophyLayouts.map(async (ph) => {
       ph.layout = resolveCollisions(ph.layout, room);
       const collisions = checkCollisions(ph.layout);
       const clearanceScores = calculateClearance(room, fixedElements, ph.layout);
@@ -64,7 +62,7 @@ router.post('/generate-layout', async (req, res) => {
         circulationResult
       );
 
-      options.push({
+      return {
         id: ph.id,
         name: ph.name || ph.title,
         desc: ph.desc || ph.tagline,
@@ -84,8 +82,8 @@ router.post('/generate-layout', async (req, res) => {
         affordances: affordanceResult,
         circulation: circulationResult,
         focalPoint
-      });
-    }
+      };
+    }));
 
     // Sort options intelligently based on selected vibe to ensure variety and relevance
     if (vibe === 'cozy') {
