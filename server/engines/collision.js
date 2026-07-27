@@ -48,8 +48,8 @@ export function resolveCollisions(layout = [], room = { width: 15, length: 20 })
   const resolved = layout.map(item => ({ ...item }));
   const roomW = room.width || 15;
   const roomL = room.length || 20;
-  const iterations = 15;
-  const buffer = 0.35; // 4+ inches extra breathing space
+  const iterations = 40;
+  const buffer = 0.75; // 9+ inches extra breathing space to prevent 3D mesh overlap
 
   for (let iter = 0; iter < iterations; iter++) {
     let hasOverlap = false;
@@ -59,10 +59,18 @@ export function resolveCollisions(layout = [], room = { width: 15, length: 20 })
         const a = resolved[i];
         const b = resolved[j];
 
-        const aHalfW = (a.width / 2) + (buffer / 2);
-        const aHalfD = (a.depth / 2) + (buffer / 2);
-        const bHalfW = (b.width / 2) + (buffer / 2);
-        const bHalfD = (b.depth / 2) + (buffer / 2);
+        // Check orientation rotation to swap width and depth if rotated ~90 or ~270 deg
+        const aRotated = Math.abs(Math.sin(a.rotation || 0)) > 0.5;
+        const bRotated = Math.abs(Math.sin(b.rotation || 0)) > 0.5;
+        const aEffW = aRotated ? a.depth : a.width;
+        const aEffD = aRotated ? a.width : a.depth;
+        const bEffW = bRotated ? b.depth : b.width;
+        const bEffD = bRotated ? b.width : b.depth;
+
+        const aHalfW = (aEffW / 2) + (buffer / 2);
+        const aHalfD = (aEffD / 2) + (buffer / 2);
+        const bHalfW = (bEffW / 2) + (buffer / 2);
+        const bHalfD = (bEffD / 2) + (buffer / 2);
 
         const dx = b.x - a.x;
         const dy = b.y - a.y;
@@ -74,26 +82,40 @@ export function resolveCollisions(layout = [], room = { width: 15, length: 20 })
           hasOverlap = true;
           // Separate along axis of least penetration
           if (overlapX < overlapY) {
-            const shift = overlapX / 2 + 0.05;
+            const shift = overlapX / 2 + 0.1;
             const sign = dx < 0 ? 1 : -1;
-            // Push apart along X
             if (a.type !== 'tv') a.x += sign * shift;
             if (b.type !== 'tv') b.x -= sign * shift;
           } else {
-            const shift = overlapY / 2 + 0.05;
+            const shift = overlapY / 2 + 0.1;
             const sign = dy < 0 ? 1 : -1;
-            // Push apart along Y
             if (a.type !== 'tv') a.y += sign * shift;
             if (b.type !== 'tv') b.y -= sign * shift;
+          }
+        }
+
+        // Special protection: never allow a chair inside or overlapping a sofa bounding zone
+        if (((a.type === 'chair' && b.type === 'sofa') || (a.type === 'sofa' && b.type === 'chair'))) {
+          const chair = a.type === 'chair' ? a : b;
+          const sofa = a.type === 'sofa' ? a : b;
+          const dist = Math.sqrt((chair.x - sofa.x)**2 + (chair.y - sofa.y)**2);
+          if (dist < 3.8) {
+            hasOverlap = true;
+            const pushDirX = chair.x - sofa.x || (Math.random() - 0.5);
+            const pushDirY = chair.y - sofa.y || (Math.random() - 0.5);
+            const len = Math.sqrt(pushDirX**2 + pushDirY**2) || 1;
+            chair.x = sofa.x + (pushDirX / len) * 4.2;
+            chair.y = sofa.y + (pushDirY / len) * 4.2;
           }
         }
       }
 
       // Enforce room wall boundary clamping
       const item = resolved[i];
-      const halfW = item.width / 2;
-      const halfD = item.depth / 2;
-      const minMargin = 0.6;
+      const itemRotated = Math.abs(Math.sin(item.rotation || 0)) > 0.5;
+      const halfW = (itemRotated ? item.depth : item.width) / 2;
+      const halfD = (itemRotated ? item.width : item.depth) / 2;
+      const minMargin = 0.8;
       item.x = Math.max(halfW + minMargin, Math.min(roomW - halfW - minMargin, item.x));
       item.y = Math.max(halfD + minMargin, Math.min(roomL - halfD - minMargin, item.y));
     }

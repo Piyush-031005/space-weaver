@@ -115,7 +115,7 @@ const FurnitureModel = ({
 }: {
   src: string;
   chaosPos: { x: number; y: number; z: number; r: number };
-  arrangedPos: { x: number; z: number; r: number };
+  arrangedPos: { x: number; y?: number; z: number; r: number };
   size: number;
   phase: "chaos" | "arranging" | "arranged";
   index: number;
@@ -170,8 +170,9 @@ const FurnitureModel = ({
       gsap.to(ref.rotation, { x: 0, y: 0, z: 0, duration: 0.6, ease: "power2.inOut" });
     } else if (phase === "arranged") {
       const baseDelay = index * 0.05;
-      // Land smoothly on floor (y = 0) at arranged coordinates
-      gsap.to(ref.position, { x: arrangedPos.x, y: 0, z: arrangedPos.z, duration: 2.2, ease: "power3.out", delay: baseDelay });
+      const targetY = arrangedPos.y !== undefined ? arrangedPos.y : 0;
+      // Land smoothly on floor or mounted height at arranged coordinates
+      gsap.to(ref.position, { x: arrangedPos.x, y: targetY, z: arrangedPos.z, duration: 2.2, ease: "power3.out", delay: baseDelay });
       gsap.to(ref.rotation, { x: 0, y: arrangedPos.r, z: 0, duration: 2.2, ease: "power3.out", delay: baseDelay });
     }
   }, [phase, chaosPos, arrangedPos, index]);
@@ -251,8 +252,8 @@ const Scene = ({
     ? layoutData.map(ld => ({
         src: typeMap[ld.type] || "/models/sofa.glb",
         chaos: { x: (Math.random() - 0.5) * 10, y: 4 + Math.random() * 4, z: (Math.random() - 0.5) * 10, r: Math.random() * 4 },
-        arranged: { x: ld.x - (roomW / 2), z: ld.y - (roomL / 2), r: ld.rotation },
-        size: Math.max(ld.width, ld.depth) * 0.75
+        arranged: { x: ld.x - (roomW / 2), y: ld.type === 'tv' ? 2.4 : (ld.type === 'lamp' ? 1.5 : 0), z: ld.y - (roomL / 2), r: ld.rotation },
+        size: Math.max(ld.width, ld.depth) * (ld.type === 'chair' ? 0.85 : 0.75)
       }))
     : defaultItems;
 
