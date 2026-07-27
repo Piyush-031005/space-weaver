@@ -86,6 +86,39 @@ router.post('/generate-layout', async (req, res) => {
       });
     }
 
+    // Sort options intelligently based on selected vibe to ensure variety and relevance
+    if (vibe === 'cozy') {
+      const cozyOrder = ['philosophy-cozy', 'philosophy-family', 'philosophy-humanist', 'philosophy-sunset'];
+      options.sort((a, b) => {
+        const aIndex = cozyOrder.indexOf(a.id);
+        const bIndex = cozyOrder.indexOf(b.id);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return 0;
+      });
+    } else if (vibe === 'space_saver') {
+      const spaceOrder = ['philosophy-architect', 'philosophy-minimalist', 'philosophy-executive', 'philosophy-cinema'];
+      options.sort((a, b) => {
+        const aIndex = spaceOrder.indexOf(a.id);
+        const bIndex = spaceOrder.indexOf(b.id);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return 0;
+      });
+    } else if (vibe === 'aesthetic') {
+      const aestheticOrder = ['philosophy-curator', 'philosophy-grand', 'philosophy-fengshui', 'philosophy-entertainer'];
+      options.sort((a, b) => {
+        const aIndex = aestheticOrder.indexOf(a.id);
+        const bIndex = aestheticOrder.indexOf(b.id);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return 0;
+      });
+    }
+
     res.json({ options, focalPoint, relationshipGraph: graphResult });
   } catch (error) {
     console.error("HSRE Layout Generation Error:", error);
