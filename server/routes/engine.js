@@ -24,12 +24,16 @@ router.post('/generate-layout', async (req, res) => {
   try {
     const { room, structuralElements, furniture, vibe } = req.body;
     const fixedElements = (structuralElements || []).map(el => {
-      let x = 0, y = 0, rotation = 0;
-      if (el.wall === 'top') { x = el.position; y = 0; }
-      else if (el.wall === 'bottom') { x = el.position; y = room.length; }
-      else if (el.wall === 'left') { x = 0; y = el.position; rotation = Math.PI/2; }
-      else if (el.wall === 'right') { x = room.width; y = el.position; rotation = Math.PI/2; }
-      return { ...el, x, y, width: el.width, depth: 0.5, rotation };
+      let x = el.x !== undefined ? el.x : 0;
+      let y = el.y !== undefined ? el.y : 0;
+      let rotation = el.rotation !== undefined ? el.rotation : 0;
+      let depth = el.depth !== undefined ? el.depth : (el.type === 'pillar' || el.type === 'column' ? 2 : 0.5);
+      if (el.wall === 'top' && el.y === undefined) { x = el.position || 0; y = 0; }
+      else if (el.wall === 'bottom' && el.y === undefined) { x = el.position || 0; y = room.length; }
+      else if (el.wall === 'left' && el.x === undefined) { x = 0; y = el.position || 0; rotation = Math.PI/2; }
+      else if (el.wall === 'right' && el.x === undefined) { x = room.width; y = el.position || 0; rotation = Math.PI/2; }
+      else if (el.wall === 'interior' || el.wall === 'center') { x = el.x || el.position || room.width/2; y = el.y || room.length/2; }
+      return { ...el, x, y, width: el.width || (el.type === 'pillar' || el.type === 'column' ? 2 : 3), depth, rotation };
     });
 
     // 1. Detect Primary Focal Point
@@ -41,7 +45,7 @@ router.post('/generate-layout', async (req, res) => {
     // 3. Generate 12 Expert Interior Design Configurations
     const philosophyLayouts = generateAllPhilosophies(room, furniture, fixedElements, focalPoint);
     const options = await Promise.all(philosophyLayouts.map(async (ph) => {
-      ph.layout = resolveCollisions(ph.layout, room);
+      ph.layout = resolveCollisions(ph.layout, room, fixedElements);
       const collisions = checkCollisions(ph.layout);
       const clearanceScores = calculateClearance(room, fixedElements, ph.layout);
       const genome = generateGenome(clearanceScores);

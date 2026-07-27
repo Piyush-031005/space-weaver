@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Collision Engine
  * Validates that no two pieces of furniture overlap.
  * Uses rotation-aware effective bounding box intersection.
@@ -53,10 +53,11 @@ function checkOverlap(a, b, buffer = 0.5) {
  * Resolves collisions by verifying clean placement and spiraling outward
  * if any unexpected overlap occurs, guaranteeing zero oscillation or overlapping.
  */
-export function resolveCollisions(layout = [], room = { width: 15, length: 20 }) {
+export function resolveCollisions(layout = [], room = { width: 15, length: 20 }, fixedElements = []) {
   const roomW = room.width || 15;
   const roomL = room.length || 20;
   const resolved = [];
+  const obstacles = () => [...resolved, ...fixedElements];
 
   for (let i = 0; i < layout.length; i++) {
     const item = { ...layout[i] };
@@ -68,7 +69,7 @@ export function resolveCollisions(layout = [], room = { width: 15, length: 20 })
     item.y = Math.max(d / 2 + 0.6, Math.min(roomL - d / 2 - 0.6, item.y));
 
     // Check against previously resolved items in this layout
-    if (!resolved.some(exist => checkOverlap(item, exist, 0.6))) {
+    if (!obstacles().some(exist => checkOverlap(item, exist, 0.6))) {
       resolved.push(item);
       continue;
     }
@@ -81,7 +82,7 @@ export function resolveCollisions(layout = [], room = { width: 15, length: 20 })
         const candY = Math.max(d / 2 + 0.6, Math.min(roomL - d / 2 - 0.6, item.y + Math.sin(angle) * r));
         const cand = { ...item, x: candX, y: candY };
 
-        if (!resolved.some(exist => checkOverlap(cand, exist, 0.6))) {
+        if (!obstacles().some(exist => checkOverlap(cand, exist, 0.6))) {
           item.x = candX;
           item.y = candY;
           foundClean = true;

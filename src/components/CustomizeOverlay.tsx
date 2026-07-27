@@ -87,7 +87,7 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
         type: selectedStructTool,
         position: clampX,
         width: tool.w,
-        wall: tool.wall === "interior" ? "top" : tool.wall,
+        wall: tool.wall,
         x: clampX,
         y: clampY,
         depth: tool.d,
@@ -141,6 +141,27 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
         if (item.id === selectedStructId) {
           const currentRot = item.rotation || 0;
           return { ...item, rotation: currentRot + angleRad };
+        }
+        return item;
+      }));
+    }
+  };
+
+  // Change Vertical Elevation (3D Y-Axis / Height from Floor in feet)
+  const elevateItem = (dz: number) => {
+    if (activeItem) {
+      setLayout(layout.map(item => {
+        if (item.id === selectedItemId) {
+          const curEl = item.elevation !== undefined ? item.elevation : (item.type === 'tv' ? 2.4 : item.type === 'lamp' ? 1.5 : 0);
+          return { ...item, elevation: Math.max(0, Math.min(8, curEl + dz)) };
+        }
+        return item;
+      }));
+    } else if (activeStruct) {
+      setStructuralElements(structuralElements.map(item => {
+        if (item.id === selectedStructId) {
+          const curEl = item.elevation !== undefined ? item.elevation : (item.type === 'pillar' || item.type === 'column' ? 2 : item.type === 'beam' ? 3.6 : item.type === 'window' ? 2 : 1.4);
+          return { ...item, elevation: Math.max(0, Math.min(8, curEl + dz)) };
         }
         return item;
       }));
@@ -285,8 +306,40 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                   </div>
                 </div>
 
+                {/* Vertical Elevation Controls (3D Height / Y-Axis) */}
+                <div className="space-y-2 pt-2 border-t border-border/40">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Vertical Elevation (3D Height / Y-Axis)
+                    </span>
+                    <span className="text-xs font-mono font-bold text-primary">
+                      {Math.round(((activeItem ? (activeItem.elevation !== undefined ? activeItem.elevation : (activeItem.type === 'tv' ? 2.4 : activeItem.type === 'lamp' ? 1.5 : 0)) : (activeStruct?.elevation !== undefined ? activeStruct.elevation : (activeStruct?.type === 'pillar' || activeStruct?.type === 'column' ? 2 : activeStruct?.type === 'beam' ? 3.6 : activeStruct?.type === 'window' ? 2 : 1.4))) || 0) * 10) / 10}ft
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => elevateItem(0.5)} 
+                      className="text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 py-2.5"
+                      title="Move higher up in 3D (ceiling direction)"
+                    >
+                      <ArrowUp size={14} /> Raise Height (+0.5ft)
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => elevateItem(-0.5)} 
+                      className="text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 py-2.5"
+                      title="Move lower down in 3D (floor direction)"
+                    >
+                      <ArrowDown size={14} /> Lower Height (-0.5ft)
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="text-[11px] font-mono text-muted-foreground pt-2 text-center bg-background/50 p-2 rounded-lg">
-                  Pos: ({Math.round((activeItem?.x || activeStruct?.x || 0) * 10) / 10}ft, {Math.round((activeItem?.y || activeStruct?.y || 0) * 10) / 10}ft) • Angle: {Math.round(((activeItem?.rotation || activeStruct?.rotation || 0) * (180/Math.PI)) % 360)}°
+                  Pos: ({Math.round((activeItem?.x || activeStruct?.x || 0) * 10) / 10}ft, {Math.round((activeItem?.y || activeStruct?.y || 0) * 10) / 10}ft) • Elev: {Math.round(((activeItem ? (activeItem.elevation !== undefined ? activeItem.elevation : (activeItem.type === 'tv' ? 2.4 : activeItem.type === 'lamp' ? 1.5 : 0)) : (activeStruct?.elevation !== undefined ? activeStruct.elevation : 2)) || 0) * 10) / 10}ft • Angle: {Math.round(((activeItem?.rotation || activeStruct?.rotation || 0) * (180/Math.PI)) % 360)}°
                 </div>
               </div>
             ) : (

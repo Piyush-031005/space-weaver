@@ -118,7 +118,7 @@ export const PHILOSOPHY_DEFINITIONS = [
 ];
 
 export function generatePhilosophyLayout(room, furniture, fixedElements, focalPoint, def) {
-  const layout = resolveRelationshipLayout(room, furniture, focalPoint, def.mode);
+  const layout = resolveRelationshipLayout(room, furniture, focalPoint, def.mode, fixedElements);
   return {
     id: def.id,
     name: def.title,

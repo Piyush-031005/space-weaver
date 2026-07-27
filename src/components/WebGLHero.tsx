@@ -252,7 +252,7 @@ const Scene = ({
     ? layoutData.map(ld => ({
         src: typeMap[ld.type] || "/models/sofa.glb",
         chaos: { x: (Math.random() - 0.5) * 10, y: 4 + Math.random() * 4, z: (Math.random() - 0.5) * 10, r: Math.random() * 4 },
-        arranged: { x: ld.x - (roomW / 2), y: ld.type === 'tv' ? 2.4 : (ld.type === 'lamp' ? 1.5 : 0), z: ld.y - (roomL / 2), r: ld.rotation },
+        arranged: { x: ld.x - (roomW / 2), y: ld.elevation !== undefined ? ld.elevation : (ld.type === 'tv' ? 2.4 : (ld.type === 'lamp' ? 1.5 : 0)), z: ld.y - (roomL / 2), r: ld.rotation },
         size: Math.max(ld.width, ld.depth) * (ld.type === 'chair' ? 0.85 : 0.75)
       }))
     : defaultItems;
@@ -320,7 +320,7 @@ const Scene = ({
             const w = el.width || (isPillar ? 2 : isBeam ? 6 : 3.5);
             const d = el.depth || (isPillar ? 2 : isBeam ? 1 : 0.5);
             const h = isPillar ? 4 : isBeam ? 0.8 : isWin ? 1.5 : 2.8;
-            const posY = isPillar ? 2 : isBeam ? 3.6 : isWin ? 2 : 1.4;
+            const posY = el.elevation !== undefined ? el.elevation : (isPillar ? 2 : isBeam ? 3.6 : isWin ? 2 : 1.4);
 
             return (
               <group key={`struct-${i}`} position={[x, posY, z]} rotation={[0, rotation, 0]}>
