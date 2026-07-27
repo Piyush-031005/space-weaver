@@ -12,29 +12,38 @@ router.post('/generate-layout', async (req, res) => {
     const { room, structuralElements, furniture, vibe } = req.body;
 
     const fixedElements = (structuralElements || []).map(el => {
-      // Map wall position to actual x, y coordinates
-      let x = 0;
-      let y = 0;
-      let depth = 0.5; // doors/windows have minimal depth intrusion
-      let width = el.width;
-      let rotation = 0;
+      const isPillar = el.type === 'pillar' || el.type === 'column';
+      const isBeam = el.type === 'beam';
+      const isTvWall = el.type === 'tv_wall' || el.type === 'tv' || el.type === 'focal_wall';
 
-      if (el.wall === 'top') {
-        x = el.position;
-        y = 0;
-        rotation = 0;
-      } else if (el.wall === 'bottom') {
-        x = el.position;
-        y = room.length;
-        rotation = 0;
-      } else if (el.wall === 'left') {
-        x = 0;
-        y = el.position;
-        rotation = Math.PI / 2;
-      } else if (el.wall === 'right') {
-        x = room.width;
-        y = el.position;
-        rotation = Math.PI / 2;
+      let width = el.width !== undefined ? Number(el.width) : (isPillar ? 2 : isBeam ? 6 : isTvWall ? 5 : 3.5);
+      let depth = el.depth !== undefined ? Number(el.depth) : (isPillar ? 2 : isBeam ? 1 : isTvWall ? 1.2 : 0.5);
+      let rotation = el.rotation !== undefined ? Number(el.rotation) : 0;
+      let x = el.x !== undefined ? Number(el.x) : 0;
+      let y = el.y !== undefined ? Number(el.y) : 0;
+
+      if (el.x === undefined || el.y === undefined) {
+        // Map wall position to actual x, y coordinates
+        if (el.wall === 'top') {
+          x = el.position || 0;
+          y = depth / 2;
+          rotation = 0;
+        } else if (el.wall === 'bottom') {
+          x = el.position || 0;
+          y = room.length - depth / 2;
+          rotation = 0;
+        } else if (el.wall === 'left') {
+          x = depth / 2;
+          y = el.position || 0;
+          rotation = Math.PI / 2;
+        } else if (el.wall === 'right') {
+          x = room.width - depth / 2;
+          y = el.position || 0;
+          rotation = Math.PI / 2;
+        } else {
+          x = room.width / 2;
+          y = room.length / 2;
+        }
       }
 
       return {

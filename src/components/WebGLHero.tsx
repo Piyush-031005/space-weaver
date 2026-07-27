@@ -316,21 +316,22 @@ const Scene = ({
             const isPillar = el.type === 'pillar' || el.type === 'column';
             const isBeam = el.type === 'beam';
             const isWin = el.type === 'window';
+            const isTvWall = el.type === 'tv_wall' || el.type === 'tv' || el.type === 'focal_wall';
 
-            const w = el.width || (isPillar ? 2 : isBeam ? 6 : 3.5);
-            const d = el.depth || (isPillar ? 2 : isBeam ? 1 : 0.5);
-            const h = isPillar ? 4 : isBeam ? 0.8 : isWin ? 1.5 : 2.8;
-            const posY = el.elevation !== undefined ? el.elevation : (isPillar ? 2 : isBeam ? 3.6 : isWin ? 2 : 1.4);
+            const w = el.width || (isPillar ? 2 : isBeam ? 6 : isTvWall ? 5 : 3.5);
+            const d = el.depth || (isPillar ? 2 : isBeam ? 1 : isTvWall ? 1.2 : 0.5);
+            const h = isPillar ? 4 : isBeam ? 0.8 : isWin ? 1.5 : isTvWall ? 3.5 : 2.8;
+            const posY = el.elevation !== undefined ? el.elevation : (isPillar ? 2 : isBeam ? 3.6 : isWin ? 2 : isTvWall ? 1.75 : 1.4);
 
             return (
               <group key={`struct-${i}`} position={[x, posY, z]} rotation={[0, rotation, 0]}>
                 <mesh castShadow receiveShadow>
                   <boxGeometry args={[w, h, d]} />
                   <meshStandardMaterial 
-                    color={isWin ? "#88ccff" : isPillar ? "#cbd5e1" : isBeam ? "#5c4033" : "#8b5a2b"} 
+                    color={isWin ? "#88ccff" : isPillar ? "#cbd5e1" : isBeam ? "#5c4033" : isTvWall ? "#3b0764" : "#8b5a2b"} 
                     transparent={isWin} 
                     opacity={isWin ? 0.6 : 1}
-                    roughness={isPillar ? 0.7 : 0.8}
+                    roughness={isPillar ? 0.7 : isTvWall ? 0.3 : 0.8}
                   />
                 </mesh>
               </group>

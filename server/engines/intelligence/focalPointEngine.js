@@ -5,7 +5,23 @@
  */
 
 export function detectFocalPoint(room, fixedElements = [], furniture = []) {
-  // 1. Priority 1: TV (Entertainment Focal Point)
+  // 0. Priority 0: Manually Assigned TV Wall / Entertainment Hub in Structural Elements
+  const tvFixed = fixedElements.find(e => ['tv', 'tv_wall', 'focal_wall', 'entertainment'].includes((e.type || '').toLowerCase()));
+  if (tvFixed) {
+    let x = tvFixed.x !== undefined ? tvFixed.x : (tvFixed.position || room.width / 2);
+    let y = tvFixed.y !== undefined ? tvFixed.y : 1;
+    return {
+      type: "tv",
+      id: tvFixed.id || "tv-wall-focal",
+      position: { x, y },
+      wall: tvFixed.wall || "top",
+      preferredDistance: { min: 6, max: 10 },
+      viewingConeDeg: 30,
+      description: "Primary Television & Entertainment Wall Hub (Manually Assigned)"
+    };
+  }
+
+  // 1. Priority 1: TV (Entertainment Focal Point from furniture inventory)
   const tvItem = furniture.find(f => (f.type || '').toLowerCase() === 'tv');
   if (tvItem) {
     // Determine wall or location of TV
