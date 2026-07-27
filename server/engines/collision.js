@@ -95,17 +95,19 @@ export function resolveCollisions(layout = [], room = { width: 15, length: 20 })
         }
 
         // Special protection: never allow a chair inside or overlapping a sofa bounding zone
-        if (((a.type === 'chair' && b.type === 'sofa') || (a.type === 'sofa' && b.type === 'chair'))) {
-          const chair = a.type === 'chair' ? a : b;
-          const sofa = a.type === 'sofa' ? a : b;
+        const aType = (a.type || '').toLowerCase();
+        const bType = (b.type || '').toLowerCase();
+        if (((aType === 'chair' && bType === 'sofa') || (aType === 'sofa' && bType === 'chair'))) {
+          const chair = aType === 'chair' ? a : b;
+          const sofa = aType === 'sofa' ? a : b;
           const dist = Math.sqrt((chair.x - sofa.x)**2 + (chair.y - sofa.y)**2);
-          if (dist < 3.8) {
+          if (dist < 4.8) {
             hasOverlap = true;
             const pushDirX = chair.x - sofa.x || (Math.random() - 0.5);
             const pushDirY = chair.y - sofa.y || (Math.random() - 0.5);
             const len = Math.sqrt(pushDirX**2 + pushDirY**2) || 1;
-            chair.x = sofa.x + (pushDirX / len) * 4.2;
-            chair.y = sofa.y + (pushDirY / len) * 4.2;
+            chair.x = sofa.x + (pushDirX / len) * 5.2;
+            chair.y = sofa.y + (pushDirY / len) * 5.2;
           }
         }
       }

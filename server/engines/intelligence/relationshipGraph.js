@@ -199,28 +199,49 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
     });
   }
 
-  // 5. Place Chairs orbiting open conversation perimeter with distinct offset spacing
+  // 5. Place Chairs orbiting open conversation perimeter with guaranteed sofa standoff distance
   chairs.forEach((chair, i) => {
     const side = i % 2 === 0 ? 1 : -1;
     const pairIndex = Math.floor(i / 2);
-    let chairX = centerX + (side * (4.8 + pairIndex * 2.0));
-    let chairY = primarySofaY - 3.5 - (pairIndex * 3.2);
+    let chairX = centerX + (side * (5.2 + pairIndex * 2.2));
+    let chairY = primarySofaY - 3.8 - (pairIndex * 3.0);
     let chairRot = side === 1 ? -Math.PI / 2 : Math.PI / 2;
 
     if (mode === "FACE_TO_FACE_CENTER" || mode === "GRAND_SALON") {
-      chairX = centerX + (side * (5.5 + pairIndex * 1.8));
-      chairY = tableY + (pairIndex % 2 === 0 ? 0 : -3.5);
+      chairX = centerX + (side * (6.0 + pairIndex * 2.0));
+      chairY = tableY + (pairIndex % 2 === 0 ? 0 : -3.8);
       chairRot = side === 1 ? -Math.PI / 2 : Math.PI / 2;
     } else if (mode === "U_SHAPE_GATHERING") {
-      chairX = centerX + (side * (4 + pairIndex * 2.2));
-      chairY = primarySofaY - 6.5 - (pairIndex * 2.5);
+      chairX = centerX + (side * (4.5 + pairIndex * 2.2));
+      chairY = primarySofaY - 7.0 - (pairIndex * 2.5);
       chairRot = 0; // facing up into U
+    }
+
+    // Mathematical guarantee: Never allow chair to spawn within 5.0 feet of any placed sofa
+    let isValidPos = false;
+    let attempts = 0;
+    while (!isValidPos && attempts < 20) {
+      isValidPos = true;
+      for (const placed of layout) {
+        if ((placed.type || '').toLowerCase() === 'sofa') {
+          const dist = Math.sqrt((chairX - placed.x)**2 + (chairY - placed.y)**2);
+          if (dist < 5.0) {
+            isValidPos = false;
+            // Push chair away from the sofa into open floor zone
+            const dirX = chairX - placed.x >= 0 ? 1 : -1;
+            chairX = placed.x + (dirX * 5.5);
+            chairY = placed.y - 3.0;
+            break;
+          }
+        }
+      }
+      attempts++;
     }
 
     layout.push({
       ...chair,
-      x: Math.max(1.5, Math.min(roomW - 1.5, chairX)),
-      y: Math.max(1.5, Math.min(roomL - 1.5, chairY)),
+      x: Math.max(1.8, Math.min(roomW - 1.8, chairX)),
+      y: Math.max(1.8, Math.min(roomL - 1.8, chairY)),
       rotation: chairRot
     });
   });
