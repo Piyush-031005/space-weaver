@@ -45,8 +45,9 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
   ];
 
   const structureTools = [
-    { type: "pillar", label: "Wall Pillar / Column", w: 2, d: 2, wall: "interior", desc: "Internal support column or wall bump-out" },
-    { type: "beam", label: "Ceiling / Floor Beam", w: 6, d: 1, wall: "interior", desc: "Structural beam or divider threshold" },
+    { type: "pillar", label: "Wall Pillar / Column", w: 2, d: 2, wall: "interior", desc: "Internal support column or freestanding pillar" },
+    { type: "pillar", label: "Wall-Edge Pillar", w: 2, d: 2, wall: "top", desc: "Corner or wall-edge architectural bump-out" },
+    { type: "beam", label: "Interior Wall / Beam", w: 6, d: 1, wall: "interior", desc: "Structural beam or internal wall partition" },
     { type: "window", label: "Window Frame", w: 5, d: 0.5, wall: "top", desc: "Exterior glass aperture" },
     { type: "door", label: "Entryway / Door", w: 3.5, d: 0.5, wall: "bottom", desc: "Primary room door corridor" }
   ];
@@ -368,10 +369,17 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                 {structuralElements.map((el, idx) => {
                   const isSelected = el.id === selectedStructId;
                   let x = el.x || 0; let y = el.y || 0; let w = el.width || 2; let h = el.depth || 2;
-                  if (el.wall === 'top') { x = el.position || el.x || w/2; y = 0; w = el.width; h = 0.6; }
-                  else if (el.wall === 'bottom') { x = el.position || el.x || w/2; y = rL - 0.6; w = el.width; h = 0.6; }
-                  else if (el.wall === 'left') { x = 0; y = el.position || el.y || w/2; w = 0.6; h = el.width; }
-                  else if (el.wall === 'right') { x = rW - 0.6; y = el.position || el.y || w/2; w = 0.6; h = el.width; }
+                  const isPillarOrBeam = el.type === 'pillar' || el.type === 'column' || el.type === 'beam';
+                  if (el.wall === 'top' && !isPillarOrBeam) { x = el.position || el.x || w/2; y = 0; w = el.width; h = 0.6; }
+                  else if (el.wall === 'bottom' && !isPillarOrBeam) { x = el.position || el.x || w/2; y = rL - 0.6; w = el.width; h = 0.6; }
+                  else if (el.wall === 'left' && !isPillarOrBeam) { x = 0; y = el.position || el.y || w/2; w = 0.6; h = el.width; }
+                  else if (el.wall === 'right' && !isPillarOrBeam) { x = rW - 0.6; y = el.position || el.y || w/2; w = 0.6; h = el.width; }
+                  else if (isPillarOrBeam && el.wall !== 'interior') {
+                    if (el.wall === 'top') { x = el.position || el.x || w/2; y = h/2; }
+                    else if (el.wall === 'bottom') { x = el.position || el.x || w/2; y = rL - h/2; }
+                    else if (el.wall === 'left') { x = w/2; y = el.position || el.y || h/2; }
+                    else if (el.wall === 'right') { x = rW - w/2; y = el.position || el.y || h/2; }
+                  }
 
                   return (
                     <g
