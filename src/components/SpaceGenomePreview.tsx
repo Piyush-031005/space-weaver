@@ -101,7 +101,7 @@ const SpaceGenomePreview = () => {
 
               <div className="pt-6">
                 <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
-                  <span>✦ 100% Practical Human Ergonomics</span>
+                  <span>✦ Practical Human Ergonomics & Sightlines</span>
                 </div>
               </div>
             </motion.div>

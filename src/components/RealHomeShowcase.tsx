@@ -55,8 +55,8 @@ const TRANSFORMATIONS: RealTransformation[] = [
     beforeDesc: "Desk faced a blank wall while the seating area suffered from awkward acoustic reflection.",
     afterDesc: "Positioned the desk in the architectural command position with professional background framing and natural side-lighting.",
     imageUrl: "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=1600&q=80",
-    stat: "100%",
-    statLabel: "Command Position Fit"
+    stat: "Optimum",
+    statLabel: "Command Position Alignment"
   }
 ];
 

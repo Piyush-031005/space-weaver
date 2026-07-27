@@ -235,8 +235,8 @@ const DesignResults = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="px-5 py-2.5 bg-zinc-100 dark:bg-zinc-900 text-foreground border border-border/80 rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-sm">
-                  ★ 100% STUDIO ERGONOMIC SPEC
+                <span className="px-4 py-2 bg-zinc-100 dark:bg-zinc-900 text-foreground border border-border/80 rounded-full text-xs font-mono font-semibold uppercase tracking-wider shadow-sm">
+                  🏛️ MILAN LUXURY STUDIO CURATED
                 </span>
               </div>
             </div>
@@ -356,6 +356,10 @@ const DesignResults = () => {
         <Fullscreen3DStudio
           isOpen={is3DStudioOpen}
           onClose={() => setIs3DStudioOpen(false)}
+          onCustomize={() => {
+            setIs3DStudioOpen(false);
+            setIsCustomizeOpen(true);
+          }}
           activeOption={activeOption}
           room={payloadToUse?.room || { width: 20, length: 20 }}
           fixedElements={activeOption.structuralElements || payloadToUse?.structuralElements || []}

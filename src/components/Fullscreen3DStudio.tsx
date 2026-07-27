@@ -8,6 +8,7 @@ const WebGLHero = React.lazy(() => import("@/components/WebGLHero"));
 interface Fullscreen3DStudioProps {
   isOpen: boolean;
   onClose: () => void;
+  onCustomize?: () => void;
   activeOption: any;
   room: { width: number; length: number };
   fixedElements?: any[];
@@ -17,6 +18,7 @@ interface Fullscreen3DStudioProps {
 const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
   isOpen,
   onClose,
+  onCustomize,
   activeOption,
   room,
   fixedElements = [],
@@ -41,7 +43,7 @@ const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs uppercase tracking-widest font-bold text-zinc-400">Architectural 3D Studio</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">PRO DARK MODE</span>
+                <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] font-mono font-semibold">MILAN LUXURY SPEC</span>
               </div>
               <h2 className="text-lg font-display font-bold text-white mt-0.5">
                 {activeOption.name || "Curated Configuration"}
@@ -55,8 +57,8 @@ const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
               <Compass size={14} className="text-primary" /> Dimensions: {room.width}ft × {room.length}ft
             </span>
             <span className="text-zinc-600">|</span>
-            <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-              <ShieldCheck size={14} /> 100% Ergonomic Fit
+            <span className="flex items-center gap-1.5 text-zinc-300 font-semibold">
+              <ShieldCheck size={14} className="text-primary" /> Studio Ergonomic Spec
             </span>
             <span className="text-zinc-600">|</span>
             <span className="text-zinc-400">
@@ -66,6 +68,18 @@ const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            {onCustomize && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onCustomize();
+                }}
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-zinc-950 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg active:scale-95"
+                title="Customize furniture coordinates, rotation, and architectural pillars"
+              >
+                🎛️ Customize Arrangement
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-semibold transition-all flex items-center gap-2 border border-zinc-700 shadow-lg active:scale-95"

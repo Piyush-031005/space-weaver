@@ -81,8 +81,8 @@ const SpaceDNA: React.FC<SpaceDNAProps> = ({ spaceData, onShare, onDownload, onC
                 <h3 className="text-2xl font-display font-bold text-foreground mt-1">Room Ergonomics</h3>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-display font-bold text-primary">100%</span>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Practical Fit</p>
+                <span className="text-xl font-display font-bold text-primary">MILAN SPEC</span>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Certified Layout</p>
               </div>
             </div>
 

@@ -74,9 +74,6 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest">
                     <span>🏛️ {opt.viralBadge || "STUDIO CURATED"}</span>
                   </span>
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-zinc-100 dark:bg-zinc-900 text-foreground border border-border/80 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest">
-                    <span>★ 100% ERGONOMIC SPEC</span>
-                  </span>
                 </div>
                 
                 <h3 className={`text-2xl font-display font-bold mb-1 ${isSelected ? "text-primary" : "text-foreground"}`}>
