@@ -166,7 +166,7 @@ const DesignResults = () => {
       <Navbar onGetStarted={() => navigate('/')} />
       
       {/* Top bar with back button and vibe switcher */}
-      <div className="container mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between border-b border-border/40 gap-4">
+      <div className="container mx-auto px-6 pt-24 md:pt-28 pb-4 flex flex-col md:flex-row items-center justify-between border-b border-border/40 gap-4 relative z-40">
         <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 text-foreground/80 hover:text-foreground">
           <ArrowLeft size={16} /> Back to Configurator
         </Button>
