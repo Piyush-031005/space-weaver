@@ -166,13 +166,13 @@ const DesignResults = () => {
       <Navbar onGetStarted={() => navigate('/')} />
       
       {/* Top bar with back button and vibe switcher */}
-      <div className="container mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between border-b border-border/50 gap-4">
-        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
+      <div className="container mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between border-b border-border/40 gap-4">
+        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 text-foreground/80 hover:text-foreground">
           <ArrowLeft size={16} /> Back to Configurator
         </Button>
         
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 max-w-full">
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1 hidden sm:inline">Objective:</span>
+        <div className="flex items-center gap-1.5 bg-muted/40 p-1.5 rounded-2xl border border-border/40 max-w-full overflow-hidden">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground px-2.5 hidden md:inline">Layout Mode:</span>
           {[
             { id: "space_saver", label: "⚡ Efficiency", desc: "Space Saver" },
             { id: "cozy", label: "🛋️ Intimacy", desc: "Cozy & Comfy" },
@@ -182,17 +182,17 @@ const DesignResults = () => {
               key={vibe.id}
               onClick={() => handleVibeSwitch(vibe.id)}
               disabled={isGenerating}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 currentVibe === vibe.id
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
-                  : "bg-background hover:bg-muted text-muted-foreground border-border/60 hover:text-foreground"
+                  ? "bg-foreground text-background shadow-md scale-[1.01]"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>{vibe.label}</span>
               <span className="opacity-70 font-normal hidden lg:inline">({vibe.desc})</span>
             </button>
           ))}
-          {isGenerating && <RefreshCw size={16} className="animate-spin text-primary ml-1 flex-shrink-0" />}
+          {isGenerating && <RefreshCw size={16} className="animate-spin text-primary ml-1.5 mr-1 flex-shrink-0" />}
         </div>
       </div>
 
