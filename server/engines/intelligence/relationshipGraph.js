@@ -77,201 +77,175 @@ export function buildRelationshipGraph(furniture = [], focalPoint) {
  */
 export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode = "FACE_TO_FACE_CENTER") {
   const layout = [];
-  const sofas = furniture.filter(f => (f.type || '').toLowerCase() === 'sofa');
+  const sofas  = furniture.filter(f => (f.type || '').toLowerCase() === 'sofa');
   const chairs = furniture.filter(f => (f.type || '').toLowerCase() === 'chair');
   const tables = furniture.filter(f => (f.type || '').toLowerCase() === 'table');
-  const tvs = furniture.filter(f => (f.type || '').toLowerCase() === 'tv');
+  const tvs    = furniture.filter(f => (f.type || '').toLowerCase() === 'tv');
   const others = furniture.filter(f => !['sofa', 'chair', 'table', 'tv'].includes((f.type || '').toLowerCase()));
 
-  const roomW = room.width || 15;
-  const roomL = room.length || 20;
+  const roomW   = room.width  || 15;
+  const roomL   = room.length || 20;
   const centerX = roomW / 2;
   const centerY = roomL / 2;
 
-  // 1. Place TV along top wall
+  // Reference sofa dimensions for computing slot offsets
+  const sofaW = sofas[0]?.width  || 7;
+  const sofaD = sofas[0]?.depth  || 3;
+
+  // ─────────────────────────────────────────────────────────────────
+  // ZONE A: TV — anchored top-wall center
+  // ─────────────────────────────────────────────────────────────────
   if (tvs.length > 0) {
-    const tv = tvs[0];
-    layout.push({
-      ...tv,
-      x: centerX,
-      y: tv.depth / 2 + 0.5,
-      rotation: 0 // facing down into room
-    });
+    layout.push({ ...tvs[0], x: centerX, y: tvs[0].depth / 2 + 0.5, rotation: 0 });
   }
 
-  // 2. Determine Primary Sofa Position (facing TV)
-  let primarySofaY = centerY + 1;
+  // ─────────────────────────────────────────────────────────────────
+  // ZONE B: Sofa positions — mode-aware, clearly spaced
+  // ─────────────────────────────────────────────────────────────────
   let primarySofaX = centerX;
+  let primarySofaY = roomL * 0.70;  // 70% down the room
+
+  // Adjust for specific modes
+  if (mode === "MINIMAL_FLOAT" || mode === "FENG_SHUI_COMMAND") primarySofaY = roomL * 0.65;
+  if (mode === "CINEMA_VIEWING_V") primarySofaY = roomL * 0.60;
+
   if (sofas.length > 0) {
-    const sofa1 = sofas[0];
-    if (mode === "MINIMAL_FLOAT" || mode === "FENG_SHUI_COMMAND") {
-      primarySofaY = centerY + 3; // Float further back
-    } else if (mode === "CINEMA_VIEWING_V") {
-      primarySofaY = centerY + 1.5;
-    }
-    layout.push({
-      ...sofa1,
-      x: primarySofaX,
-      y: primarySofaY,
-      rotation: Math.PI // facing up towards TV/focal point
+    layout.push({ ...sofas[0], x: primarySofaX, y: primarySofaY, rotation: Math.PI });
+  }
+
+  // Secondary sofa — 180° face-to-face or 90° L-Shape depending on mode
+  const sofa2Gap   = mode === "FACE_TO_FACE_WIDE" ? 8.0 : 6.5;
+  const sofa2Y     = Math.max(sofaD + 1.5, primarySofaY - sofa2Gap);
+
+  if (sofas.length >= 2) {
+    sofas.slice(1).forEach((sofa, idx) => {
+      if (mode.includes("FACE_TO_FACE") || mode === "SUNLIGHT_PARALLEL_OPPOSITE" || mode === "GRAND_SALON") {
+        layout.push({ ...sofa, x: centerX, y: Math.max(sofaD + 1.5, sofa2Y - idx * 4), rotation: 0 });
+      } else if (mode.includes("L_SHAPE_RIGHT") || mode === "COZY_RETREAT") {
+        const lx = Math.min(roomW - sofaD - 1, centerX + 4.0 + idx * 3.5);
+        layout.push({ ...sofa, x: lx, y: primarySofaY - 2, rotation: -Math.PI / 2 });
+      } else if (mode === "CINEMA_VIEWING_V") {
+        layout.push({ ...sofa, x: centerX - 4.5 - idx * 2.5, y: primarySofaY - 1.5, rotation: Math.PI - 0.3 });
+      } else if (mode === "U_SHAPE_GATHERING") {
+        const ux = Math.max(sofaD + 1, centerX - 5.0 - idx * 3.5);
+        layout.push({ ...sofa, x: ux, y: primarySofaY - 2, rotation: Math.PI / 2 });
+      } else {
+        const lx2 = Math.max(sofaD + 1, centerX - 4.5 - idx * 3.5);
+        layout.push({ ...sofa, x: lx2, y: primarySofaY - 2.8, rotation: Math.PI / 2 });
+      }
     });
   }
 
-  // 3. Place Coffee Table in front of Primary Sofa (18 to 24 inches gap)
-  let tableY = centerY;
+  // ─────────────────────────────────────────────────────────────────
+  // ZONE C: Coffee table — exact center between primary and face-to-face sofa
+  // ─────────────────────────────────────────────────────────────────
+  let tableY = primarySofaY - sofaD / 2 - 1.8 - (tables[0]?.depth || 1.5) / 2;
+  tableY = Math.max(2.5, tableY);
+
   if (tables.length > 0) {
-    const table = tables[0];
-    tableY = sofas.length > 0 ? primarySofaY - (sofas[0].depth / 2) - 1.8 - (table.depth / 2) : centerY;
     layout.push({
-      ...table,
+      ...tables[0],
       x: centerX,
-      y: Math.max(2.5, tableY),
+      y: tableY,
       rotation: mode === "SUNLIGHT_PARALLEL_OPPOSITE" ? Math.PI / 2 : 0
     });
   }
 
-  // 3b. Place Secondary & Tertiary Tables (Side Tables / Accent Tables)
+  // ─────────────────────────────────────────────────────────────────
+  // ZONE D: Secondary and tertiary tables — side tables along flanks
+  // Positioned BESIDE the conversation zone, not on top of sofas
+  // ─────────────────────────────────────────────────────────────────
   if (tables.length > 1) {
+    // Pre-defined side-table slots that are guaranteed clear of sofa zones
+    const sideTableSlots = [
+      // Flanking the coffee table area, at the sides of the conversation zone
+      { x: Math.max(tables[1].width / 2 + 1, centerX - sofaW / 2 - tables[1].width / 2 - 1.0), y: tableY, rot: 0 },
+      { x: Math.min(roomW - tables[2 < tables.length ? 2 : 1].width / 2 - 1, centerX + sofaW / 2 + (tables[2 < tables.length ? 2 : 1].width || 2) / 2 + 1.0), y: tableY, rot: 0 },
+      // End-table next to primary sofa back corner
+      { x: Math.max(1.5, centerX - sofaW / 2 - 1.5), y: primarySofaY + sofaD / 2 + 1.0, rot: 0 },
+      { x: Math.min(roomW - 1.5, centerX + sofaW / 2 + 1.5), y: primarySofaY + sofaD / 2 + 1.0, rot: 0 },
+    ];
+
     tables.slice(1).forEach((table, idx) => {
-      const isLeft = idx % 2 === 0;
-      let xPos = isLeft ? centerX - 6 : centerX + 6;
-      let yPos = primarySofaY;
-      if (idx >= 2) {
-        xPos = isLeft ? 2.5 : roomW - 2.5;
-        yPos = 3 + idx * 3;
-      }
+      const slot = sideTableSlots[idx % sideTableSlots.length];
       layout.push({
         ...table,
-        x: Math.max(1.5, Math.min(roomW - 1.5, xPos)),
-        y: Math.max(1.5, Math.min(roomL - 1.5, yPos)),
-        rotation: 0
+        x: Math.max(table.width / 2 + 1, Math.min(roomW - table.width / 2 - 1, slot.x)),
+        y: Math.max(table.depth / 2 + 1, Math.min(roomL - table.depth / 2 - 1, slot.y)),
+        rotation: slot.rot
       });
     });
   }
 
-  // 4. Place Secondary & Tertiary Sofas (STRICT 180° FACE-TO-FACE OR 90° L-SHAPE!)
-  if (sofas.length >= 2) {
-    sofas.slice(1).forEach((sofa, idx) => {
-      const sofaNum = idx + 2;
-      
-      if (mode.includes("FACE_TO_FACE") || mode === "SUNLIGHT_PARALLEL_OPPOSITE" || mode === "GRAND_SALON") {
-        // 180° Face-to-Face Opposite across coffee table
-        const gapY = mode === "FACE_TO_FACE_WIDE" ? 7.5 : 6.0;
-        layout.push({
-          ...sofa,
-          x: centerX,
-          y: Math.max(2.5, primarySofaY - gapY - (idx * 3.5)),
-          rotation: 0 // strictly facing opposite Primary Sofa!
-        });
-      } else if (mode.includes("L_SHAPE_RIGHT") || mode === "COZY_RETREAT") {
-        // 90° L-Shape on Right Side
-        layout.push({
-          ...sofa,
-          x: Math.min(roomW - 3, centerX + 4.5 + (idx * 2)),
-          y: primarySofaY - 2.5,
-          rotation: -Math.PI / 2 // facing left toward table center
-        });
-      } else if (mode === "CINEMA_VIEWING_V") {
-        // V-Shape Angled 15° inward
-        layout.push({
-          ...sofa,
-          x: centerX - 4.5 - (idx * 2),
-          y: primarySofaY - 1.5,
-          rotation: Math.PI - 0.3 // angled inward toward TV
-        });
-      } else if (mode === "U_SHAPE_GATHERING") {
-        // Left flank of U-Shape
-        layout.push({
-          ...sofa,
-          x: Math.max(3, centerX - 5 - (idx * 2)),
-          y: primarySofaY - 2.5,
-          rotation: Math.PI / 2 // facing right into U hub
-        });
-      } else {
-        // Default L-Shape Left Corner (Architect / Minimalist / Family Haven)
-        layout.push({
-          ...sofa,
-          x: Math.max(3, centerX - 4.5 - (idx * 2)),
-          y: primarySofaY - 2.8,
-          rotation: Math.PI / 2 // facing right toward table center
-        });
-      }
-    });
-  }
+  // ─────────────────────────────────────────────────────────────────
+  // ZONE E: Chairs — pre-defined SIDE slots guaranteed NOT in front/behind any sofa
+  // Chairs are placed at the FLANKS of sofas (left/right sides), not in front
+  // ─────────────────────────────────────────────────────────────────
+  const chairSlots = [
+    // Flanking primary sofa on the left
+    { x: Math.max(1.8, centerX - sofaW / 2 - 2.8), y: primarySofaY, rot:  Math.PI / 2 },
+    // Flanking primary sofa on the right
+    { x: Math.min(roomW - 1.8, centerX + sofaW / 2 + 2.8), y: primarySofaY, rot: -Math.PI / 2 },
+    // Flanking the secondary sofa or conversation zone left
+    { x: Math.max(1.8, centerX - sofaW / 2 - 2.8), y: Math.max(1.8, sofa2Y), rot:  Math.PI / 2 },
+    // Flanking the secondary sofa or conversation zone right
+    { x: Math.min(roomW - 1.8, centerX + sofaW / 2 + 2.8), y: Math.max(1.8, sofa2Y), rot: -Math.PI / 2 },
+    // Front-corner accent chairs
+    { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: Math.min(roomL - 1.8, primarySofaY + sofaD + 2.5), rot: Math.PI * 0.75 },
+    { x: Math.min(roomW - 1.8, centerX + sofaW / 2 + 2.5), y: Math.min(roomL - 1.8, primarySofaY + sofaD + 2.5), rot: -Math.PI * 0.75 },
+  ];
 
-  // 5. Place Chairs orbiting open conversation perimeter with guaranteed sofa standoff distance
+  // Override slot positions for specific modes
+  const getChairSlots = (mode) => {
+    if (mode === "U_SHAPE_GATHERING") {
+      return [
+        { x: centerX + sofaW / 2 + 2.5, y: tableY - 2, rot: -Math.PI / 2 },
+        { x: centerX + sofaW / 2 + 2.5, y: tableY + 2, rot: -Math.PI / 2 },
+        { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: tableY, rot:  Math.PI / 2 },
+        { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: tableY - 3, rot:  Math.PI / 2 },
+        { x: centerX, y: Math.max(1.8, sofa2Y - sofaD - 2.5), rot: Math.PI },
+        { x: centerX + 2.5, y: Math.max(1.8, sofa2Y - sofaD - 2.5), rot: Math.PI },
+      ];
+    }
+    if (mode === "CINEMA_VIEWING_V") {
+      return [
+        { x: centerX + sofaW / 2 + 2.5, y: primarySofaY - 1, rot: -Math.PI / 2 },
+        { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: primarySofaY - 1, rot:  Math.PI / 2 },
+        { x: centerX + sofaW / 2 + 2.5, y: tableY, rot: -Math.PI / 2 },
+        { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: tableY, rot:  Math.PI / 2 },
+        { x: Math.min(roomW - 1.8, roomW - 2), y: primarySofaY + 2, rot: -Math.PI / 2 },
+        { x: 2, y: primarySofaY + 2, rot:  Math.PI / 2 },
+      ];
+    }
+    return chairSlots;
+  };
+
+  const activeChairSlots = getChairSlots(mode);
+
   chairs.forEach((chair, i) => {
-    const side = i % 2 === 0 ? 1 : -1;
-    const pairIndex = Math.floor(i / 2);
-    let chairX = centerX + (side * (5.2 + pairIndex * 2.2));
-    let chairY = primarySofaY - 3.8 - (pairIndex * 3.0);
-    let chairRot = side === 1 ? -Math.PI / 2 : Math.PI / 2;
-
-    if (mode === "FACE_TO_FACE_CENTER" || mode === "GRAND_SALON") {
-      chairX = centerX + (side * (6.0 + pairIndex * 2.0));
-      chairY = tableY + (pairIndex % 2 === 0 ? 0 : -3.8);
-      chairRot = side === 1 ? -Math.PI / 2 : Math.PI / 2;
-    } else if (mode === "U_SHAPE_GATHERING") {
-      chairX = centerX + (side * (4.5 + pairIndex * 2.2));
-      chairY = primarySofaY - 7.0 - (pairIndex * 2.5);
-      chairRot = 0; // facing up into U
-    }
-
-    // Mathematical guarantee: Never allow chair to spawn within 5.0 feet of any placed sofa
-    let isValidPos = false;
-    let attempts = 0;
-    while (!isValidPos && attempts < 20) {
-      isValidPos = true;
-      for (const placed of layout) {
-        if ((placed.type || '').toLowerCase() === 'sofa') {
-          const dist = Math.sqrt((chairX - placed.x)**2 + (chairY - placed.y)**2);
-          if (dist < 5.0) {
-            isValidPos = false;
-            // Push chair away from the sofa into open floor zone
-            const dirX = chairX - placed.x >= 0 ? 1 : -1;
-            chairX = placed.x + (dirX * 5.5);
-            chairY = placed.y - 3.0;
-            break;
-          }
-        }
-      }
-      attempts++;
-    }
-
+    const slot = activeChairSlots[i % activeChairSlots.length];
     layout.push({
       ...chair,
-      x: Math.max(1.8, Math.min(roomW - 1.8, chairX)),
-      y: Math.max(1.8, Math.min(roomL - 1.8, chairY)),
-      rotation: chairRot
+      x: Math.max(1.8, Math.min(roomW - 1.8, slot.x)),
+      y: Math.max(1.8, Math.min(roomL - 1.8, slot.y)),
+      rotation: slot.rot
     });
   });
 
-  // 6. Place remaining perimeter furniture safely
+  // ─────────────────────────────────────────────────────────────────
+  // ZONE F: Other furniture — wall-aligned
+  // ─────────────────────────────────────────────────────────────────
   others.forEach((item, i) => {
     const typeKey = (item.type || '').toLowerCase();
     if (typeKey === 'bookshelf') {
-      layout.push({
-        ...item,
-        x: roomW - (item.depth / 2) - 0.5,
-        y: centerY + (i * 3) - 2,
-        rotation: -Math.PI / 2
-      });
+      layout.push({ ...item, x: roomW - item.depth / 2 - 0.5, y: centerY + i * 3 - 2, rotation: -Math.PI / 2 });
     } else if (typeKey === 'bed') {
-      layout.push({
-        ...item,
-        x: (item.width / 2) + 1,
-        y: roomL - (item.depth / 2) - 1,
-        rotation: 0
-      });
+      layout.push({ ...item, x: item.width / 2 + 1, y: roomL - item.depth / 2 - 1, rotation: 0 });
     } else {
-      layout.push({
-        ...item,
-        x: centerX + (i % 2 === 0 ? 4 : -4),
-        y: roomL - 2,
-        rotation: 0
-      });
+      layout.push({ ...item, x: centerX + (i % 2 === 0 ? 4 : -4), y: roomL - 2, rotation: 0 });
     }
   });
 
   return layout;
 }
+
