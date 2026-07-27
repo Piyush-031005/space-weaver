@@ -8,7 +8,7 @@ import AffiliateShowcase from "@/components/AffiliateShowcase";
 import CustomizeOverlay from "@/components/CustomizeOverlay";
 import Fullscreen3DStudio from "@/components/Fullscreen3DStudio";
 import html2canvas from "html2canvas";
-import { ArrowLeft, RefreshCw, Check } from "lucide-react";
+import { ArrowLeft, RefreshCw, Check, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
@@ -205,9 +205,7 @@ const DesignResults = () => {
           <div className="border-t border-b border-border/60 py-8 my-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-8 border-b border-border/40">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest mb-3 shadow-sm">
-                  <span>🏛️ MILAN ARCHITECTURAL STUDIO</span>
-                </div>
+                <p className="text-[10px] font-mono tracking-[0.25em] uppercase text-muted-foreground mb-3">Active arrangement</p>
                 <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
                   {activeOption?.name} — Spatial Harmony
                 </h2>
