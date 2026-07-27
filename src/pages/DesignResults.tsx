@@ -67,6 +67,7 @@ const DesignResults = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [is3DStudioOpen, setIs3DStudioOpen] = useState(false);
+  const [reopen3DAfterCustomizing, setReopen3DAfterCustomizing] = useState(false);
   const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || "cozy");
 
   useEffect(() => {
@@ -333,7 +334,13 @@ const DesignResults = () => {
       {activeOption && (
         <CustomizeOverlay 
           isOpen={isCustomizeOpen}
-          onClose={() => setIsCustomizeOpen(false)}
+          onClose={() => {
+            setIsCustomizeOpen(false);
+            if (reopen3DAfterCustomizing) {
+              setIs3DStudioOpen(true);
+              setReopen3DAfterCustomizing(false);
+            }
+          }}
           initialLayout={activeOption.layout}
           initialStructuralElements={activeOption.structuralElements || payloadToUse?.structuralElements || []}
           room={payloadToUse?.room || { width: 20, length: 20 }}
@@ -347,7 +354,12 @@ const DesignResults = () => {
             };
             setCurrentData({ ...currentData, options: newOptions });
             setIsCustomizeOpen(false);
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (reopen3DAfterCustomizing) {
+              setIs3DStudioOpen(true);
+              setReopen3DAfterCustomizing(false);
+            } else {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
           }}
         />
       )}
@@ -358,6 +370,7 @@ const DesignResults = () => {
           onClose={() => setIs3DStudioOpen(false)}
           onCustomize={() => {
             setIs3DStudioOpen(false);
+            setReopen3DAfterCustomizing(true);
             setIsCustomizeOpen(true);
           }}
           activeOption={activeOption}
