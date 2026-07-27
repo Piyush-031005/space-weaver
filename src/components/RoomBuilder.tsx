@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, Sofa, BedDouble, Monitor, Lamp, BookOpen, Armchair, Trash2, DoorClosed, AppWindow } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import StructuralVerificationModal from "@/components/StructuralVerificationModal";
 
 interface RoomBuilderProps {
   isOpen: boolean;
@@ -31,10 +32,15 @@ interface CustomItem {
 
 interface StructuralElement {
   id: string;
-  type: "door" | "window";
-  wall: "top" | "right" | "bottom" | "left";
-  position: number;
+  type: "door" | "window" | "pillar" | "beam" | "tv_wall" | string;
+  wall?: "top" | "right" | "bottom" | "left" | "interior";
+  position?: number;
   width: number;
+  depth?: number;
+  x?: number;
+  y?: number;
+  rotation?: number;
+  elevation?: number;
 }
 
 const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, isGenerating }) => {
@@ -53,6 +59,8 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   ]);
 
   const [structuralElements, setStructuralElements] = useState<StructuralElement[]>([]);
+  const [isVerificationOpen, setIsVerificationOpen] = useState<boolean>(false);
+  const [pendingPayload, setPendingPayload] = useState<any>(null);
 
   const handleUnitChange = (newUnit: string) => {
     // Simple conversion logic based on base 'ft'
@@ -147,7 +155,8 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
       unit: unit
     };
 
-    onGenerate(payload);
+    setPendingPayload(payload);
+    setIsVerificationOpen(true);
   };
 
   return (
@@ -472,12 +481,32 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                 onClick={handleGenerateClick}
                 className="w-full h-12 text-base font-semibold shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all rounded-xl"
                 disabled={isGenerating}
-              >  {isGenerating ? "Analyzing & Generating..." : "Generate Spatial Layout"}
+              >  {isGenerating ? "Analyzing & Generating..." : "Next: Verify Anchors & Generate"}
               </Button>
             </div>
           </motion.div>
         </>
       )}
+      <StructuralVerificationModal
+        isOpen={isVerificationOpen}
+        onClose={() => setIsVerificationOpen(false)}
+        room={{ width, length }}
+        unit={unit}
+        initialStructuralElements={structuralElements as any}
+        onConfirm={(updatedElements) => {
+          setIsVerificationOpen(false);
+          setStructuralElements(updatedElements as any);
+          if (pendingPayload) {
+            onGenerate({ ...pendingPayload, structuralElements: updatedElements });
+          }
+        }}
+        onSkip={() => {
+          setIsVerificationOpen(false);
+          if (pendingPayload) {
+            onGenerate(pendingPayload);
+          }
+        }}
+      />
     </AnimatePresence>
   );
 };
