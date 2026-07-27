@@ -91,9 +91,10 @@ const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
               fixedElements={fixedElements}
               room={room}
               focalPoint={focalPoint}
-              showAIThinking={true}
+              showAIThinking={false}
               showText={false}
-              fullHeight={true}
+              fullHeight={false}
+              isStudio={true}
             />
           </Suspense>
 

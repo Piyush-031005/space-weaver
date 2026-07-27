@@ -199,6 +199,7 @@ const Scene = ({
   layoutData, 
   fixedElements, 
   fullHeight, 
+  isStudio = false,
   room,
   focalPoint,
   showAIThinking = false
@@ -207,6 +208,7 @@ const Scene = ({
   layoutData?: any[]; 
   fixedElements?: any[]; 
   fullHeight: boolean;
+  isStudio?: boolean;
   room?: { width: number; length: number };
   focalPoint?: any;
   showAIThinking?: boolean;
@@ -216,7 +218,7 @@ const Scene = ({
   const roomL = room?.length || 20;
   
   useFrame(() => {
-    if (!fullHeight) return; // Disable parallax on interactive results page
+    if (!fullHeight || isStudio) return; // Disable parallax on interactive results page & studio
     // Smooth camera parallax for Hero section
     const targetX = (pointer.x * 3);
     const targetZ = 18 + (pointer.y * 3);
@@ -245,8 +247,8 @@ const Scene = ({
     lamp: "/models/titanic_lamp.glb"
   };
 
-  const activeItems = layoutData 
-    ? layoutData.map((ld: any) => ({
+  const activeItems = layoutData && layoutData.length > 0 
+    ? layoutData.map(ld => ({
         src: typeMap[ld.type] || "/models/sofa.glb",
         chaos: { x: (Math.random() - 0.5) * 10, y: 4 + Math.random() * 4, z: (Math.random() - 0.5) * 10, r: Math.random() * 4 },
         arranged: { x: ld.x - (roomW / 2), z: ld.y - (roomL / 2), r: ld.rotation },
@@ -256,13 +258,14 @@ const Scene = ({
 
   return (
     <>
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[15, 25, 20]} intensity={1.6} castShadow shadow-mapSize={[512, 512]} shadow-bias={-0.0001} />
-      <directionalLight position={[-15, 10, -10]} intensity={0.5} color="#8cb3a6" />
+      <ambientLight intensity={isStudio ? 1.5 : 1.1} />
+      <directionalLight position={[15, 25, 20]} intensity={isStudio ? 2.0 : 1.6} castShadow shadow-mapSize={[512, 512]} shadow-bias={-0.0001} />
+      <directionalLight position={[-15, 10, -10]} intensity={isStudio ? 0.8 : 0.5} color="#8cb3a6" />
+      {isStudio && <directionalLight position={[0, 20, 15]} intensity={1.2} color="#ffffff" />}
       <Environment preset="city" />
       
       {/* AI Thinking Animation Overlay */}
-      {phase === "arranged" && !fullHeight && (
+      {phase === "arranged" && !fullHeight && !isStudio && (
         <AIThinkingOverlay 
           layoutData={layoutData} 
           focalPoint={focalPoint} 
@@ -352,6 +355,7 @@ interface WebGLHeroProps {
   showAIThinking?: boolean;
   showText?: boolean;
   fullHeight?: boolean;
+  isStudio?: boolean;
 }
 
 const WebGLHero: React.FC<WebGLHeroProps> = ({ 
@@ -364,7 +368,8 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
   focalPoint,
   showAIThinking = false,
   showText = true, 
-  fullHeight = true 
+  fullHeight = true,
+  isStudio = false
 }) => {
   const [phase, setPhase] = useState<"chaos" | "arranging" | "arranged">("chaos");
 
@@ -391,16 +396,16 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
   }, [isGenerating, hasGenerated]);
 
   return (
-    <section className={`relative ${fullHeight ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden bg-background`}>
+    <section className={`relative ${(fullHeight && !isStudio) ? "min-h-screen" : "w-full h-full"} flex items-center justify-center overflow-hidden ${isStudio ? "bg-transparent" : "bg-background"}`}>
       {/* 3D Canvas Background - Optimized DPR for Lighthouse 100 Performance */}
-      <div className={`absolute inset-0 z-0 ${fullHeight ? "opacity-75 pointer-events-none" : "opacity-100"}`}>
+      <div className={`absolute inset-0 z-0 ${(fullHeight && !isStudio) ? "opacity-75 pointer-events-none" : "opacity-100"}`}>
         <Canvas 
-          camera={{ position: fullHeight ? [0, 16, 18] : [0, 18, 22], fov: 42 }}
+          camera={{ position: isStudio ? [0, 18, 22] : (fullHeight ? [0, 16, 18] : [0, 18, 22]), fov: 42 }}
           shadows
           dpr={[1, 1.2]}
           gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
         >
-          {!fullHeight && (
+          {(!fullHeight || isStudio) && (
             <OrbitControls 
               makeDefault 
               enableZoom={true} 
@@ -417,6 +422,7 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
               layoutData={layoutData} 
               fixedElements={fixedElements} 
               fullHeight={fullHeight} 
+              isStudio={isStudio}
               room={room}
               focalPoint={focalPoint}
               showAIThinking={showAIThinking}
@@ -426,7 +432,7 @@ const WebGLHero: React.FC<WebGLHeroProps> = ({
       </div>
 
       {/* Gradient overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/70 to-background/95 pointer-events-none z-10" />
+      {!isStudio && <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/70 to-background/95 pointer-events-none z-10" />}
 
       {/* Intelligence Grid (appears when arranged) */}
       <motion.div
