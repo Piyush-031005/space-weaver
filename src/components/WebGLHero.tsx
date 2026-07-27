@@ -299,25 +299,37 @@ const Scene = ({
         </mesh>
       </group>
       
-      {/* Structural Elements (Doors & Windows) */}
+      {/* Structural Elements (Pillars, Beams, Doors & Windows) */}
       {fixedElements && (
         <group>
           {fixedElements.map((el, i) => {
-            let x = 0; let z = 0; let rotation = 0;
-            if (el.wall === 'top') { x = el.position - (roomW/2); z = -(roomL/2); rotation = 0; }
-            else if (el.wall === 'bottom') { x = el.position - (roomW/2); z = (roomL/2); rotation = 0; }
-            else if (el.wall === 'left') { x = -(roomW/2); z = el.position - (roomL/2); rotation = Math.PI/2; }
-            else if (el.wall === 'right') { x = (roomW/2); z = el.position - (roomL/2); rotation = Math.PI/2; }
+            let x = 0; let z = 0; let rotation = el.rotation || 0;
+            if (el.x !== undefined && el.y !== undefined) {
+              x = el.x - (roomW / 2);
+              z = el.y - (roomL / 2);
+            } else if (el.wall === 'top') { x = (el.position || 0) - (roomW/2); z = -(roomL/2); rotation = 0; }
+            else if (el.wall === 'bottom') { x = (el.position || 0) - (roomW/2); z = (roomL/2); rotation = 0; }
+            else if (el.wall === 'left') { x = -(roomW/2); z = (el.position || 0) - (roomL/2); rotation = Math.PI/2; }
+            else if (el.wall === 'right') { x = (roomW/2); z = (el.position || 0) - (roomL/2); rotation = Math.PI/2; }
+
+            const isPillar = el.type === 'pillar' || el.type === 'column';
+            const isBeam = el.type === 'beam';
+            const isWin = el.type === 'window';
+
+            const w = el.width || (isPillar ? 2 : isBeam ? 6 : 3.5);
+            const d = el.depth || (isPillar ? 2 : isBeam ? 1 : 0.5);
+            const h = isPillar ? 4 : isBeam ? 0.8 : isWin ? 1.5 : 2.8;
+            const posY = isPillar ? 2 : isBeam ? 3.6 : isWin ? 2 : 1.4;
 
             return (
-              <group key={`struct-${i}`} position={[x, el.type === 'window' ? 2 : 1, z]} rotation={[0, rotation, 0]}>
+              <group key={`struct-${i}`} position={[x, posY, z]} rotation={[0, rotation, 0]}>
                 <mesh castShadow receiveShadow>
-                  <boxGeometry args={[el.width, el.type === 'window' ? 1.5 : 2.5, 0.5]} />
+                  <boxGeometry args={[w, h, d]} />
                   <meshStandardMaterial 
-                    color={el.type === 'window' ? "#88ccff" : "#8b5a2b"} 
-                    transparent={el.type === 'window'} 
-                    opacity={el.type === 'window' ? 0.6 : 1}
-                    roughness={0.8}
+                    color={isWin ? "#88ccff" : isPillar ? "#cbd5e1" : isBeam ? "#5c4033" : "#8b5a2b"} 
+                    transparent={isWin} 
+                    opacity={isWin ? 0.6 : 1}
+                    roughness={isPillar ? 0.7 : 0.8}
                   />
                 </mesh>
               </group>
