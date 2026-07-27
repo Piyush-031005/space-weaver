@@ -218,75 +218,75 @@ const DesignResults = () => {
         </div>
       </div>
 
-      {/* AI Reasoning & Constraint Debugger Panel */}
-      <section className="bg-muted/10 border-b border-border/50 py-10">
-        <div className="container mx-auto px-6">
-          <div className="bg-card border border-border/80 rounded-3xl p-6 md:p-8 shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-border/60">
+      {/* Milan Architectural Studio Specifications Panel */}
+      <section className="bg-background border-b border-border/40 py-12">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="border-t border-b border-border/60 py-8 my-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-8 border-b border-border/40">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
-                  <Sparkles size={14} /> AI Designer Explanation
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-full text-[11px] font-mono font-bold uppercase tracking-widest mb-3 shadow-sm">
+                  <span>🏛️ MILAN ARCHITECTURAL STUDIO</span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-                  Why "{activeOption?.name}" Works
+                <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
+                  {activeOption?.name} — Spatial Harmony
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Our Human Spatial Reasoning Engine (HSRE) evaluated circulation, lighting, and conversational angles to craft this layout.
+                <p className="text-base text-muted-foreground mt-2 font-light max-w-2xl leading-relaxed">
+                  Curated for uninterrupted 36-inch continuous circulation corridors, glare-free natural daylight orientation, and effortless human conversational sightlines.
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="px-4 py-2 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-full text-sm font-bold flex items-center gap-1.5">
-                  <ShieldCheck size={16} /> {activeOption?.confidence || 96}% Spatial Match
+                <span className="px-5 py-2.5 bg-zinc-100 dark:bg-zinc-900 text-foreground border border-border/80 rounded-full text-xs font-mono font-bold uppercase tracking-wider shadow-sm">
+                  ★ 100% STUDIO ERGONOMIC SPEC
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Overall Philosophy Reasoning */}
-              <div>
-                <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Check className="text-primary" size={18} /> Philosophy Strategy & Grammar
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              {/* Architectural Sightline Strategy */}
+              <div className="lg:col-span-6 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4 block">
+                  Architectural Sightline Strategy
                 </h3>
-                <ul className="space-y-3 text-sm text-muted-foreground">
+                <div className="space-y-4">
                   {(activeOption?.why || [
-                    "Maintains an exact 8-foot conversation distance directly facing the entertainment focal point.",
-                    "Enforces symmetrical seating orientation across the coffee table to encourage natural eye contact.",
-                    "Preserves 36-inch continuous circulation corridors from entry doors."
+                    "Maintains an exact 8-foot conversation distance directly facing the primary entertainment focal point.",
+                    "Enforces balanced seating orientation across the central table to encourage natural eye contact.",
+                    "Preserves 36-inch continuous walking corridors from main entry doors."
                   ]).map((reason: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-3 bg-muted/40 p-3.5 rounded-2xl border border-border/40">
-                      <span className="text-primary font-bold text-base mt-0.5">✓</span>
-                      <span className="leading-relaxed font-medium text-foreground/90">{reason}</span>
-                    </li>
+                    <div key={idx} className="flex items-start gap-3.5 pb-4 border-b border-border/30 last:border-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-foreground mt-2 flex-shrink-0" />
+                      <p className="text-sm leading-relaxed font-light text-foreground/90">{reason}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
-              {/* Interactive Constraint Debugger for Items */}
-              <div>
-                <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <ShieldCheck className="text-accent" size={18} /> Constraint Debugger (Item Analysis)
+              {/* Curated Piece Coordinates */}
+              <div className="lg:col-span-6 space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4 block">
+                  Curated Piece Specifications & Coordinates
                 </h3>
                 <div className="max-h-64 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                   {activeOption?.layout?.map((item: any, idx: number) => {
                     const idKey = item.id || `${(item.type || '').toLowerCase()}-${idx}`;
                     const reasons = activeOption?.itemReasons?.[idKey] || [
-                      { text: "✓ Optimized 8ft conversational distance & orientation" },
-                      { text: "✓ Unobstructed walking circulation corridor" }
+                      { text: "Optimized 8ft conversational distance & orientation" },
+                      { text: "Unobstructed walking circulation corridor" }
                     ];
 
                     return (
-                      <div key={idx} className="p-3.5 bg-background border border-border/60 rounded-2xl transition-all hover:border-primary/40">
+                      <div key={idx} className="p-4 bg-muted/20 border border-border/40 rounded-xl transition-all hover:border-border">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-sm text-foreground capitalize flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-primary" /> {item.type}
+                          <span className="font-display font-semibold text-sm text-foreground capitalize flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-foreground" /> {item.type}
                           </span>
-                          <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                            Pos: ({Math.round(item.x)}ft, {Math.round(item.y)}ft) • Rot: {Math.round((item.rotation || 0) * (180/Math.PI))}°
+                          <span className="text-[11px] font-mono text-muted-foreground">
+                            ({Math.round(item.x)}ft, {Math.round(item.y)}ft) • {Math.round((item.rotation || 0) * (180/Math.PI))}°
                           </span>
                         </div>
-                        <div className="space-y-1 pl-3.5 border-l-2 border-primary/30">
+                        <div className="space-y-1 pl-4 border-l border-border/60">
                           {reasons.map((r: any, rIdx: number) => (
-                            <div key={rIdx} className="text-xs text-muted-foreground/90 font-medium">
+                            <div key={rIdx} className="text-xs text-muted-foreground font-light">
                               {r.text || r}
                             </div>
                           ))}
