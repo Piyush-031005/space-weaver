@@ -205,7 +205,7 @@ const DesignResults = () => {
             isGenerating={isGenerating} 
             hasGenerated={true}
             layoutData={activeOption?.layout}
-            fixedElements={payloadToUse?.structuralElements}
+            fixedElements={activeOption?.structuralElements || payloadToUse?.structuralElements || []}
             room={payloadToUse?.room}
             focalPoint={currentData?.focalPoint}
             showAIThinking={true}
@@ -335,13 +335,15 @@ const DesignResults = () => {
           isOpen={isCustomizeOpen}
           onClose={() => setIsCustomizeOpen(false)}
           initialLayout={activeOption.layout}
+          initialStructuralElements={activeOption.structuralElements || payloadToUse?.structuralElements || []}
           room={payloadToUse?.room || { width: 20, length: 20 }}
           unit={payloadToUse?.unit || "ft"}
-          onSave={(newLayout) => {
+          onSave={(newLayout, newStructuralElements) => {
             const newOptions = [...currentData.options];
             newOptions[activeOptionIndex] = {
               ...newOptions[activeOptionIndex],
-              layout: newLayout
+              layout: newLayout,
+              structuralElements: newStructuralElements || newOptions[activeOptionIndex].structuralElements || payloadToUse?.structuralElements || []
             };
             setCurrentData({ ...currentData, options: newOptions });
             setIsCustomizeOpen(false);
@@ -356,7 +358,7 @@ const DesignResults = () => {
           onClose={() => setIs3DStudioOpen(false)}
           activeOption={activeOption}
           room={payloadToUse?.room || { width: 20, length: 20 }}
-          fixedElements={payloadToUse?.structuralElements}
+          fixedElements={activeOption.structuralElements || payloadToUse?.structuralElements || []}
           focalPoint={currentData?.focalPoint}
         />
       )}
