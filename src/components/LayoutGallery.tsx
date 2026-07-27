@@ -20,11 +20,12 @@ interface LayoutGalleryProps {
   options: LayoutOption[];
   activeIndex: number;
   onSelect: (index: number) => void;
+  onOpen3D?: (index: number) => void;
   room?: { width: number; length: number };
   unit?: string;
 }
 
-const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, room, unit = 'ft' }) => {
+const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, onOpen3D, room, unit = 'ft' }) => {
   if (!options || options.length === 0) return null;
 
   const rWidth = room?.width || 20;
@@ -35,13 +36,13 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold uppercase tracking-widest mb-3">
-            <Sparkles size={14} /> AI Design Philosophies
+            <Sparkles size={14} /> Expert Layout Variations
           </div>
           <h2 className="font-display font-semibold text-3xl md:text-4xl text-foreground mb-3">
-            Three Curated Spatial Philosophies
+            12 Expert Spatial Configurations
           </h2>
           <p className="text-muted-foreground text-sm md:text-base">
-            Instead of generic variations, our Human Spatial Reasoning Engine (HSRE) generated three distinct expert design philosophies for your room. Select a philosophy below to explore its invisible neural relationships in 3D.
+            Our spatial intelligence engine generated 12 expert interior design configurations tailored to your lifestyle objective. Select any layout below to inspect its ergonomics and floor flow.
           </p>
         </div>
 
@@ -55,7 +56,6 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                 key={opt.id}
                 onClick={() => {
                   onSelect(idx);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 className={`group relative cursor-pointer overflow-hidden rounded-3xl border transition-all duration-300 p-6 flex flex-col h-full ${
                   isSelected 
@@ -157,10 +157,29 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onS
                   </div>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-border/50">
-                  <button className={`w-full py-3 rounded-xl text-sm font-semibold transition-all shadow-sm ${isSelected ? 'bg-primary text-primary-foreground shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}>
-                    {isSelected ? 'Currently Viewing in 3D' : 'Explore Philosophy in 3D'}
+                <div className="mt-5 pt-4 border-t border-border/50 flex gap-2">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(idx);
+                    }}
+                    className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all shadow-sm ${isSelected ? 'bg-primary text-primary-foreground shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}
+                  >
+                    {isSelected ? 'Active Configuration' : 'Select Configuration'}
                   </button>
+                  {onOpen3D && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(idx);
+                        onOpen3D(idx);
+                      }}
+                      className="px-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 rounded-xl text-sm font-bold shadow-md transition-transform active:scale-95 flex items-center gap-1.5"
+                      title="Open Fullscreen 3D Studio"
+                    >
+                      <span>🛋️</span> <span className="hidden sm:inline">3D Studio</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

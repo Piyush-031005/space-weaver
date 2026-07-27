@@ -6,6 +6,7 @@ import SpaceDNA from "@/components/SpaceDNA";
 import LayoutGallery from "@/components/LayoutGallery";
 import AffiliateShowcase from "@/components/AffiliateShowcase";
 import CustomizeOverlay from "@/components/CustomizeOverlay";
+import Fullscreen3DStudio from "@/components/Fullscreen3DStudio";
 import html2canvas from "html2canvas";
 import { ArrowLeft, RefreshCw, Check, Sparkles, ShieldCheck, Cpu, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ const DesignResults = () => {
   const [currentData, setCurrentData] = useState(initialData);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
+  const [is3DStudioOpen, setIs3DStudioOpen] = useState(false);
   const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || "cozy");
 
   useEffect(() => {
@@ -81,8 +83,8 @@ const DesignResults = () => {
     }
   }, [shareId]);
 
-  const handleVibeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newVibe = e.target.value;
+  const handleVibeSwitch = async (newVibe: string) => {
+    if (newVibe === currentVibe || isGenerating) return;
     setCurrentVibe(newVibe);
     setIsGenerating(true);
     
@@ -108,6 +110,11 @@ const DesignResults = () => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleVibeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVibe = e.target.value;
+    handleVibeSwitch(newVibe);
   };
 
   if (!currentData || !currentData.options) {
@@ -164,19 +171,28 @@ const DesignResults = () => {
           <ArrowLeft size={16} /> Back to Configurator
         </Button>
         
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Spatial Objective:</label>
-          <select 
-            className="bg-background border border-border rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
-            value={currentVibe}
-            onChange={handleVibeChange}
-            disabled={isGenerating}
-          >
-            <option value="space_saver">Efficiency (Space Saver)</option>
-            <option value="cozy">Intimacy (Cozy & Comfy)</option>
-            <option value="aesthetic">Aesthetic (Visual Balance)</option>
-          </select>
-          {isGenerating && <RefreshCw size={16} className="animate-spin text-primary" />}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 max-w-full">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1 hidden sm:inline">Objective:</span>
+          {[
+            { id: "space_saver", label: "⚡ Efficiency", desc: "Space Saver" },
+            { id: "cozy", label: "🛋️ Intimacy", desc: "Cozy & Comfy" },
+            { id: "aesthetic", label: "🏛️ Gallery", desc: "Visual Balance" }
+          ].map((vibe) => (
+            <button
+              key={vibe.id}
+              onClick={() => handleVibeSwitch(vibe.id)}
+              disabled={isGenerating}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
+                currentVibe === vibe.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
+                  : "bg-background hover:bg-muted text-muted-foreground border-border/60 hover:text-foreground"
+              }`}
+            >
+              <span>{vibe.label}</span>
+              <span className="opacity-70 font-normal hidden lg:inline">({vibe.desc})</span>
+            </button>
+          ))}
+          {isGenerating && <RefreshCw size={16} className="animate-spin text-primary ml-1 flex-shrink-0" />}
         </div>
       </div>
 
@@ -291,6 +307,10 @@ const DesignResults = () => {
           options={currentData.options} 
           activeIndex={activeOptionIndex}
           onSelect={setActiveOptionIndex} 
+          onOpen3D={(idx) => {
+            setActiveOptionIndex(idx);
+            setIs3DStudioOpen(true);
+          }}
           room={payloadToUse?.room}
           unit={payloadToUse?.unit}
         />
@@ -327,6 +347,17 @@ const DesignResults = () => {
             setIsCustomizeOpen(false);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
+        />
+      )}
+
+      {activeOption && (
+        <Fullscreen3DStudio
+          isOpen={is3DStudioOpen}
+          onClose={() => setIs3DStudioOpen(false)}
+          activeOption={activeOption}
+          room={payloadToUse?.room || { width: 20, length: 20 }}
+          fixedElements={payloadToUse?.structuralElements}
+          focalPoint={currentData?.focalPoint}
         />
       )}
     </div>
