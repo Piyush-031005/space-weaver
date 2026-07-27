@@ -1,5 +1,5 @@
-import React from "react";
-import { Check, Sparkles, ShieldCheck } from "lucide-react";
+﻿import React from "react";
+import { Check } from "lucide-react";
 
 interface LayoutOption {
   id: string;
@@ -14,6 +14,7 @@ interface LayoutOption {
   genome?: any;
   roast?: string[];
   droppedItems?: any[];
+  structuralElements?: any[];
 }
 
 interface LayoutGalleryProps {
@@ -25,174 +26,130 @@ interface LayoutGalleryProps {
   unit?: string;
 }
 
-const LayoutGallery: React.FC<LayoutGalleryProps> = ({ options, activeIndex, onSelect, onOpen3D, room, unit = 'ft' }) => {
+const LayoutGallery: React.FC<LayoutGalleryProps> = ({
+  options,
+  activeIndex,
+  onSelect,
+  onOpen3D,
+  room,
+  unit = "ft",
+}) => {
   if (!options || options.length === 0) return null;
 
-  const rWidth = room?.width || 20;
+  const rWidth  = room?.width  || 20;
   const rLength = room?.length || 20;
 
   return (
-    <section className="py-12 bg-muted/20 border-t border-border/50">
-      <div className="container mx-auto px-6">
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold uppercase tracking-widest mb-3">
-            <Sparkles size={14} /> Expert Layout Variations
-          </div>
-          <h2 className="font-display font-semibold text-3xl md:text-4xl text-foreground mb-3">
-            12 Expert Spatial Configurations
+    <section className="py-20 bg-background border-t border-border/20">
+      <div className="container mx-auto px-6 lg:px-10">
+        <div className="max-w-2xl mb-16">
+          <p className="text-[11px] font-mono tracking-[0.35em] uppercase text-muted-foreground mb-4">
+            Spatial Configurations
+          </p>
+          <h2 className="font-display font-light text-4xl md:text-5xl lg:text-6xl text-foreground tracking-tight leading-none mb-5">
+            12 Expert<br />Arrangements
           </h2>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Our spatial intelligence engine generated 12 expert interior design configurations tailored to your lifestyle objective. Select any layout below to inspect its ergonomics and floor flow.
+          <p className="text-muted-foreground text-base leading-relaxed max-w-lg">
+            Each arrangement is authored by a distinct interior design philosophy. Select the configuration that best reflects your lifestyle and spatial priorities.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-border/20">
           {options.map((opt, idx) => {
             const isSelected = activeIndex === idx;
-            const clearance = opt.clearanceScores;
-
             return (
               <div
                 key={opt.id}
-                onClick={() => {
-                  onSelect(idx);
-                }}
-                className={`group relative cursor-pointer overflow-hidden rounded-3xl border transition-all duration-300 p-6 flex flex-col h-full ${
-                  isSelected 
-                    ? "border-primary bg-primary/5 shadow-xl scale-[1.02] ring-2 ring-primary/20" 
-                    : "border-border/60 bg-background hover:border-primary/50 hover:shadow-lg hover:scale-[1.01]"
+                onClick={() => onSelect(idx)}
+                className={`group relative cursor-pointer flex flex-col bg-background transition-all duration-200 ${
+                  isSelected
+                    ? "outline outline-1 outline-foreground/50 z-10"
+                    : "hover:bg-muted/20"
                 }`}
               >
                 {isSelected && (
-                  <div className="absolute top-5 right-5 bg-primary text-primary-foreground p-1.5 rounded-full shadow-md z-10 animate-pulse">
-                    <Check size={16} strokeWidth={3} />
-                  </div>
-                )}
-                
-                {/* Luxury Studio Badges */}
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest">
-                    <span>🏛️ {opt.viralBadge || "STUDIO CURATED"}</span>
-                  </span>
-                </div>
-                
-                <h3 className={`text-2xl font-display font-bold mb-1 ${isSelected ? "text-primary" : "text-foreground"}`}>
-                  {opt.name}
-                </h3>
-                
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Best For: <span className="text-foreground">{opt.bestFor || "Optimal living"}</span>
-                </p>
-                
-                <p className="text-sm text-muted-foreground/90 mb-5 flex-grow leading-relaxed">
-                  {opt.philosophyDescription || opt.desc}
-                </p>
-
-                {/* Metrics */}
-                {clearance?.spaceSavedPercentage !== undefined && (
-                  <div className="mb-5 grid grid-cols-2 gap-3 p-3 bg-muted/40 rounded-2xl border border-border/40 text-xs font-medium">
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground text-[11px]">Space Efficiency</span>
-                      <span className="text-accent font-bold text-sm">{clearance.spaceSavedPercentage}% Free</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground text-[11px]">Recovered Area</span>
-                      <span className="text-foreground font-bold text-sm">{Math.round(clearance.freeSpaceArea)} sq {unit}</span>
-                    </div>
+                  <div className="absolute top-4 right-4 z-20 w-5 h-5 rounded-full bg-foreground flex items-center justify-center">
+                    <Check size={10} strokeWidth={3.5} className="text-background" />
                   </div>
                 )}
 
-                {/* Accurate Blueprint Visualization */}
-                <div className={`h-44 w-full rounded-2xl border flex items-center justify-center overflow-hidden bg-[#0f172a] relative ${isSelected ? "border-primary shadow-inner" : "border-border/50"}`}>
-                  <svg 
-                    viewBox={`-1 -1 ${rWidth + 2} ${rLength + 2}`} 
-                    className="w-full h-full p-3 drop-shadow-md"
+                <div className="w-full aspect-video bg-[#080d18] overflow-hidden">
+                  <svg
+                    viewBox={`-1 -1 ${rWidth + 2} ${rLength + 2}`}
+                    className="w-full h-full"
                     preserveAspectRatio="xMidYMid meet"
                   >
-                    {/* Background Grid */}
                     <pattern id={`grid-${opt.id}`} width="2" height="2" patternUnits="userSpaceOnUse">
-                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.1" />
+                      <path d="M 2 0 L 0 0 0 2" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.06" />
                     </pattern>
                     <rect width={rWidth} height={rLength} fill={`url(#grid-${opt.id})`} />
-                    
-                    {/* Structural Elements */}
+                    <rect width={rWidth} height={rLength} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.18" />
+
                     {opt.structuralElements?.map((el: any, elIdx: number) => {
-                      let x = 0; let y = 0; let w = 0; let h = 0;
-                      if (el.wall === 'top') { x = el.position - el.width/2; y = 0; w = el.width; h = 0.5; }
-                      else if (el.wall === 'bottom') { x = el.position - el.width/2; y = rLength - 0.5; w = el.width; h = 0.5; }
-                      else if (el.wall === 'left') { x = 0; y = el.position - el.width/2; w = 0.5; h = el.width; }
-                      else if (el.wall === 'right') { x = rWidth - 0.5; y = el.position - el.width/2; w = 0.5; h = el.width; }
-                      return (
-                        <rect 
-                          key={`struct-${elIdx}`} 
-                          x={x} y={y} width={w} height={h} 
-                          fill={el.type === 'window' ? '#38bdf8' : '#eab308'} 
-                          opacity={0.8}
-                        />
-                      );
+                      let x = 0, y = 0, w = 0, h = 0;
+                      if (el.wall === "top")    { x = el.position - el.width / 2; y = 0;              w = el.width; h = 0.5; }
+                      if (el.wall === "bottom") { x = el.position - el.width / 2; y = rLength - 0.5; w = el.width; h = 0.5; }
+                      if (el.wall === "left")   { x = 0;             y = el.position - el.width / 2;  w = 0.5; h = el.width; }
+                      if (el.wall === "right")  { x = rWidth - 0.5;  y = el.position - el.width / 2;  w = 0.5; h = el.width; }
+                      return <rect key={elIdx} x={x} y={y} width={w} height={h} fill={el.type === "window" ? "#38bdf8" : "#fbbf24"} opacity={0.65} />;
                     })}
 
-                    {/* Furniture Blueprint */}
                     {opt.layout?.map((item: any, iIdx: number) => (
-                      <g 
-                        key={iIdx} 
-                        transform={`translate(${item.x}, ${item.y}) rotate(${(item.rotation || 0) * (180/Math.PI)})`}
-                      >
-                        <rect 
-                          x={-item.width / 2} 
-                          y={-item.depth / 2} 
-                          width={item.width} 
-                          height={item.depth} 
-                          fill="rgba(255,255,255,0.15)" 
-                          stroke="rgba(255,255,255,0.8)" 
-                          strokeWidth="0.12" 
-                          rx="0.2"
+                      <g key={iIdx} transform={`translate(${item.x},${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}>
+                        <rect
+                          x={-item.width / 2} y={-item.depth / 2}
+                          width={item.width} height={item.depth}
+                          fill="rgba(255,255,255,0.10)"
+                          stroke={isSelected ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.55)"}
+                          strokeWidth="0.13" rx="0.12"
                         />
-                        {/* Direction Arrow / Orientation Indicator */}
-                        <line x1="0" y1="0" x2="0" y2={-item.depth / 2} stroke="rgba(255,255,255,0.4)" strokeWidth="0.08" strokeDasharray="0.1,0.1" />
-                        {/* Type Label */}
-                        <text 
-                          x="0" 
-                          y="0" 
-                          fontSize={Math.min(item.width, item.depth) * 0.32} 
-                          fill="white" 
-                          className="font-bold tracking-tight"
-                          textAnchor="middle" 
+                        <text
+                          x="0" y="0"
+                          fontSize={Math.min(item.width, item.depth) * 0.28}
+                          fill="rgba(255,255,255,0.65)"
+                          textAnchor="middle"
                           alignmentBaseline="middle"
+                          fontFamily="monospace"
                         >
                           {item.type}
                         </text>
                       </g>
                     ))}
                   </svg>
-                  <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-black/60 backdrop-blur-md rounded text-[10px] text-white/80 font-mono">
-                    2D Studio CAD Blueprint
-                  </div>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-border/50 flex gap-2">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelect(idx);
-                    }}
-                    className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all shadow-sm ${isSelected ? 'bg-primary text-primary-foreground shadow-primary/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}
-                  >
-                    {isSelected ? 'Active Configuration' : 'Select Configuration'}
-                  </button>
-                  {onOpen3D && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelect(idx);
-                        onOpen3D(idx);
-                      }}
-                      className="px-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 rounded-xl text-sm font-bold shadow-md transition-transform active:scale-95 flex items-center gap-1.5"
-                      title="Open Fullscreen 3D Studio"
+                <div className="flex flex-col flex-1 px-5 pt-5 pb-6">
+                  <p className="text-[10px] font-mono tracking-[0.25em] uppercase text-muted-foreground mb-2">
+                    {opt.bestFor || "Spatial Configuration"}
+                  </p>
+                  <h3 className="font-display text-xl font-medium text-foreground mb-3 leading-snug">
+                    {opt.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed flex-grow mb-6">
+                    {opt.philosophyDescription || opt.desc}
+                  </p>
+
+                  <div className="flex items-center gap-4 pt-4 border-t border-border/20">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onSelect(idx); }}
+                      className={`text-sm font-medium tracking-wide transition-colors ${
+                        isSelected
+                          ? "text-foreground underline underline-offset-4"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      <span>🛋️</span> <span className="hidden sm:inline">3D Studio</span>
+                      {isSelected ? "Selected" : "Select"}
                     </button>
-                  )}
+                    {onOpen3D && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onSelect(idx); onOpen3D(idx); }}
+                        className="ml-auto px-4 py-2 bg-foreground text-background text-xs font-semibold tracking-widest uppercase hover:opacity-75 transition-opacity"
+                        title="Open Fullscreen 3D Studio"
+                      >
+                        3D View
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
