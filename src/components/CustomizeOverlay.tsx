@@ -29,6 +29,8 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
   const [selectedStructTool, setSelectedStructTool] = useState<string>("pillar");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedStructId, setSelectedStructId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggingType, setDraggingType] = useState<'furniture' | 'structure' | null>(null);
 
   if (!isOpen) return null;
 
@@ -337,7 +339,7 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
           <div className="flex-1 bg-[#0f172a] p-6 lg:p-10 flex flex-col items-center justify-center relative overflow-hidden select-none">
             <div className="absolute top-4 left-6 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs font-mono text-white/80">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Click empty grid to insert active tool ({selectedTab === "furniture" ? selectedTool : selectedStructTool})</span>
+              <span>Click empty grid to insert tool • Click & drag any piece to move directly on floor plan</span>
             </div>
 
             <div className="w-full h-full max-w-4xl max-h-[70vh] flex items-center justify-center">
@@ -347,6 +349,24 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                 className="w-full h-full cursor-crosshair drop-shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-[#0b1120]"
                 preserveAspectRatio="xMidYMid meet"
                 onClick={handleGridClick}
+                onMouseMove={(e) => {
+                  if (!draggingId || !draggingType) return;
+                  const svg = e.currentTarget;
+                  const pt = svg.createSVGPoint();
+                  pt.x = e.clientX;
+                  pt.y = e.clientY;
+                  const cursorPt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+                  const clampX = Math.max(1, Math.min(rW - 1, cursorPt.x));
+                  const clampY = Math.max(1, Math.min(rL - 1, cursorPt.y));
+                  
+                  if (draggingType === 'furniture') {
+                    setLayout(prev => prev.map(item => item.id === draggingId ? { ...item, x: clampX, y: clampY } : item));
+                  } else {
+                    setStructuralElements(prev => prev.map(item => item.id === draggingId ? { ...item, x: clampX, y: clampY, position: clampX } : item));
+                  }
+                }}
+                onMouseUp={() => { setDraggingId(null); setDraggingType(null); }}
+                onMouseLeave={() => { setDraggingId(null); setDraggingType(null); }}
               >
                 {/* Architectural Grid */}
                 <pattern id="customizer-grid" width="1" height="1" patternUnits="userSpaceOnUse">
@@ -368,28 +388,31 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                 {/* Structural Elements (Pillars, Beams, Windows, Doors) */}
                 {structuralElements.map((el, idx) => {
                   const isSelected = el.id === selectedStructId;
-                  let x = el.x || 0; let y = el.y || 0; let w = el.width || 2; let h = el.depth || 2;
+                  let w = el.width || 2; let h = el.depth || 2;
                   const isPillarOrBeam = el.type === 'pillar' || el.type === 'column' || el.type === 'beam';
-                  if (el.wall === 'top' && !isPillarOrBeam) { x = el.position || el.x || w/2; y = 0; w = el.width; h = 0.6; }
-                  else if (el.wall === 'bottom' && !isPillarOrBeam) { x = el.position || el.x || w/2; y = rL - 0.6; w = el.width; h = 0.6; }
-                  else if (el.wall === 'left' && !isPillarOrBeam) { x = 0; y = el.position || el.y || w/2; w = 0.6; h = el.width; }
-                  else if (el.wall === 'right' && !isPillarOrBeam) { x = rW - 0.6; y = el.position || el.y || w/2; w = 0.6; h = el.width; }
-                  else if (isPillarOrBeam && el.wall !== 'interior') {
-                    if (el.wall === 'top') { x = el.position || el.x || w/2; y = h/2; }
-                    else if (el.wall === 'bottom') { x = el.position || el.x || w/2; y = rL - h/2; }
-                    else if (el.wall === 'left') { x = w/2; y = el.position || el.y || h/2; }
-                    else if (el.wall === 'right') { x = rW - w/2; y = el.position || el.y || h/2; }
-                  }
+                  if (el.wall === 'top' && !isPillarOrBeam) { w = el.width; h = 0.6; }
+                  else if (el.wall === 'bottom' && !isPillarOrBeam) { w = el.width; h = 0.6; }
+                  else if (el.wall === 'left' && !isPillarOrBeam) { w = 0.6; h = el.width; }
+                  else if (el.wall === 'right' && !isPillarOrBeam) { w = 0.6; h = el.width; }
+
+                  let x = el.x || el.position || w/2;
+                  let y = el.y || h/2;
+                  if (el.wall === 'top') { x = el.position || el.x || w/2; y = h/2; }
+                  else if (el.wall === 'bottom') { x = el.position || el.x || w/2; y = rL - h/2; }
+                  else if (el.wall === 'left') { x = w/2; y = el.position || el.y || h/2; }
+                  else if (el.wall === 'right') { x = rW - w/2; y = el.position || el.y || h/2; }
 
                   return (
                     <g
                       key={`struct-el-${idx}`}
+                      transform={`translate(${x}, ${y}) rotate(${(el.rotation || 0) * (180 / Math.PI)})`}
                       onClick={(e) => { e.stopPropagation(); setSelectedStructId(el.id); setSelectedItemId(null); }}
+                      onMouseDown={(e) => { e.stopPropagation(); setSelectedStructId(el.id); setSelectedItemId(null); setDraggingId(el.id); setDraggingType('structure'); }}
                       className="cursor-pointer transition-all"
                     >
                       <rect
-                        x={x - (el.wall === 'top' || el.wall === 'bottom' ? w/2 : 0)}
-                        y={y - (el.wall === 'left' || el.wall === 'right' ? h/2 : 0)}
+                        x={-w/2}
+                        y={-h/2}
                         width={w}
                         height={h}
                         fill={el.type === 'window' ? '#38bdf8' : el.type === 'door' ? '#eab308' : '#cbd5e1'}
@@ -399,13 +422,14 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                         rx="0.1"
                       />
                       <text
-                        x={x}
-                        y={y + h/2}
+                        x={0}
+                        y={0}
                         fontSize="0.5"
                         fill="#0f172a"
                         fontFamily="monospace"
                         fontWeight="bold"
                         textAnchor="middle"
+                        alignmentBaseline="middle"
                       >
                         {el.type?.toUpperCase()}
                       </text>
@@ -421,6 +445,7 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                       key={`${item.id}-${i}`}
                       transform={`translate(${item.x}, ${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}
                       onClick={(e) => { e.stopPropagation(); setSelectedItemId(item.id); setSelectedStructId(null); }}
+                      onMouseDown={(e) => { e.stopPropagation(); setSelectedItemId(item.id); setSelectedStructId(null); setDraggingId(item.id); setDraggingType('furniture'); }}
                       className="cursor-pointer transition-all group"
                     >
                       {/* Selection Glow Box */}
