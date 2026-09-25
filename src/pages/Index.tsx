@@ -65,7 +65,7 @@ const Index = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/generate-layout", {
+      const response = await fetch("/api/generate-layout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payloadToUse)

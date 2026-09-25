@@ -52,7 +52,7 @@ const DesignResults = () => {
 
   useEffect(() => {
     if (shareId) {
-      fetch(`http://localhost:5000/api/genome/${shareId}`)
+      fetch(`/api/genome/${shareId}`)
         .then(res => res.json())
         .then(data => {
           if (!data.error) {
@@ -75,7 +75,7 @@ const DesignResults = () => {
         vibe: newVibe,
         structuralElements: payloadToUse?.structuralElements || []
       };
-      const response = await fetch("http://localhost:5000/api/generate-layout", {
+      const response = await fetch("/api/generate-layout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -111,7 +111,7 @@ const DesignResults = () => {
 
   const handleShare = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/share", {
+      const response = await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(activeOption)
