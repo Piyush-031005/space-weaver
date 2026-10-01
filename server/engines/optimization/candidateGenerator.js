@@ -123,28 +123,30 @@ function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElem
   const isSwapped = Math.abs(Math.sin(rot)) > 0.5;
   const w = isSwapped ? item.depth : item.width;
   const d = isSwapped ? item.width : item.depth;
+  const WALL_PAD = 0.6;
 
   const clamp = (x, y) => ({
-    x: Math.max(w / 2 + 0.5, Math.min(roomW - w / 2 - 0.5, x)),
-    y: Math.max(d / 2 + 0.5, Math.min(roomL - d / 2 - 0.5, y)),
+    x: Math.max(w / 2 + WALL_PAD, Math.min(roomW - w / 2 - WALL_PAD, x)),
+    y: Math.max(d / 2 + WALL_PAD, Math.min(roomL - d / 2 - WALL_PAD, y)),
   });
 
   const allObstacles = [...placedSoFar, ...(fixedElements || [])];
+  const CLEAR_BUFFER = 0.7; // 0.7ft (~8 inches) between items
 
   const candidate = { ...item, rotation: rot, ...clamp(targetX, targetY) };
 
-  if (!allObstacles.some(obs => overlaps(candidate, obs, 0.6))) {
+  if (!allObstacles.some(obs => overlaps(candidate, obs, CLEAR_BUFFER))) {
     return candidate;
   }
 
   // Spiral outward to find clean position
-  for (let r = 0.5; r <= Math.max(roomW, roomL); r += 0.4) {
-    const steps = Math.max(8, Math.round((2 * Math.PI * r) / 0.5));
+  for (let r = 0.4; r <= Math.max(roomW, roomL); r += 0.35) {
+    const steps = Math.max(10, Math.round((2 * Math.PI * r) / 0.4));
     for (let step = 0; step < steps; step++) {
       const angle = (step / steps) * 2 * Math.PI;
       const { x, y } = clamp(targetX + Math.cos(angle) * r, targetY + Math.sin(angle) * r);
       const cand = { ...candidate, x, y };
-      if (!allObstacles.some(obs => overlaps(cand, obs, 0.6))) {
+      if (!allObstacles.some(obs => overlaps(cand, obs, CLEAR_BUFFER))) {
         return cand;
       }
     }
@@ -173,9 +175,11 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
   // Split candidates into 4 spatial zones to guarantee diversity across philosophies
   // Zone 0: seating in top half | Zone 1: seating in bottom half
   // Zone 2: seating left-biased | Zone 3: seating right-biased
-  const zoneSize = Math.floor(count / 4);
+  // Using 200 candidates (50 per zone) — faster than 400, still enough diversity
+  const TOTAL = 200;
+  const zoneSize = Math.floor(TOTAL / 4);
 
-  for (let attempt = 0; attempt < count; attempt++) {
+  for (let attempt = 0; attempt < TOTAL; attempt++) {
     const placed = [];
     const zone = Math.floor(attempt / zoneSize); // 0,1,2,3
 
@@ -197,22 +201,23 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
         else { tx = d / 2 + 0.4 + Math.random() * 0.5; ty = roomL * (0.1 + Math.random() * 0.8); }
       } else if (FOCAL_FACING_TYPES.has(typeKey)) {
         // Seating: zone-biased placement for guaranteed diversity
+        // Zones are spread across the FULL room depth (not just 20-55%)
         if (zone === 0) {
-          // Top-half seating (close to focal/TV)
+          // Close seating (20-40% down): near focal/TV
           tx = roomW * (0.10 + Math.random() * 0.80);
-          ty = roomL * (0.20 + Math.random() * 0.30);
+          ty = roomL * (0.20 + Math.random() * 0.20);
         } else if (zone === 1) {
-          // Bottom-half seating (far from TV, cozy back)
+          // Far seating (65-90% down): against back wall
           tx = roomW * (0.10 + Math.random() * 0.80);
-          ty = roomL * (0.55 + Math.random() * 0.35);
+          ty = roomL * (0.65 + Math.random() * 0.25);
         } else if (zone === 2) {
-          // Left-wall bias
-          tx = roomW * (0.05 + Math.random() * 0.35);
-          ty = roomL * (0.25 + Math.random() * 0.55);
+          // Left-zone seating: hug left third
+          tx = roomW * (0.05 + Math.random() * 0.25);
+          ty = roomL * (0.20 + Math.random() * 0.60);
         } else {
-          // Right-wall bias
-          tx = roomW * (0.60 + Math.random() * 0.35);
-          ty = roomL * (0.25 + Math.random() * 0.55);
+          // Right-zone seating: hug right third
+          tx = roomW * (0.70 + Math.random() * 0.25);
+          ty = roomL * (0.20 + Math.random() * 0.60);
         }
       } else if (CENTER_FLOAT_TYPES.has(typeKey)) {
         // Tables: float in middle third of room
