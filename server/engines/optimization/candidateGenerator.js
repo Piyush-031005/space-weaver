@@ -511,6 +511,98 @@ function generateFitWarnings(layout, room, fixedElements) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SIMULATED ANNEALING REFINEMENT (Make It Home — SIGGRAPH 2011 method)
+//
+// After the generate→score→pick phase finds the best candidate, SA takes
+// that layout and keeps trying small perturbations (nudges + rotations).
+// It accepts worse solutions with probability e^(ΔE/T), so it can escape
+// local optima that pure random search cannot.
+//
+// Parameters tuned for <50ms budget:
+//   T0 = 1.0  (starting temperature — accepts 37% of solutions that are 1.0 worse)
+//   Tf = 0.01 (final temperature — almost never accepts bad moves)
+//   iterations = 150 (fast enough for real-time, meaningful improvement)
+// ─────────────────────────────────────────────────────────────────────────────
+function refineCandidateWithSA(layout, room, fixedElements, focalPoint, weights) {
+  const T0 = 1.0;
+  const Tf = 0.01;
+  const ITERATIONS = 150;
+  const CLEAR_BUFFER = 0.7;
+  const WALL_PAD = 0.6;
+
+  // Deep-copy the layout so we don't mutate the original
+  let current = layout.map(item => ({ ...item }));
+  let currentScore = scoreLayout(current, room, fixedElements, focalPoint, weights).total;
+  let best = current.map(item => ({ ...item }));
+  let bestScore = currentScore;
+
+  for (let iter = 0; iter < ITERATIONS; iter++) {
+    const T = T0 * Math.pow(Tf / T0, iter / ITERATIONS); // geometric cooling
+
+    // Pick a random item to perturb
+    const idx = Math.floor(Math.random() * current.length);
+    const item = current[idx];
+    const aabb = getAABB(item);
+
+    // Perturbation: small nudge (up to 1.5ft) or 90° rotation flip
+    const perturb = Math.random();
+    let newItem;
+    if (perturb < 0.6) {
+      // Position nudge
+      const dx = (Math.random() - 0.5) * 3.0;
+      const dy = (Math.random() - 0.5) * 3.0;
+      const rot = item.rotation || 0;
+      const isSwapped = Math.abs(Math.sin(rot)) > 0.5;
+      const w = isSwapped ? item.depth : item.width;
+      const d = isSwapped ? item.width : item.depth;
+      newItem = {
+        ...item,
+        x: Math.max(w / 2 + WALL_PAD, Math.min(room.width  - w / 2 - WALL_PAD, item.x + dx)),
+        y: Math.max(d / 2 + WALL_PAD, Math.min(room.length - d / 2 - WALL_PAD, item.y + dy)),
+      };
+    } else {
+      // Rotation flip (90° increments)
+      const rotations = VALID_ROTATIONS_BY_TYPE[(item.type || '').toLowerCase()]
+        || VALID_ROTATIONS_BY_TYPE.default;
+      const newRot = rotations[Math.floor(Math.random() * rotations.length)];
+      const isSwapped = Math.abs(Math.sin(newRot)) > 0.5;
+      const w = isSwapped ? item.depth : item.width;
+      const d = isSwapped ? item.width : item.depth;
+      newItem = {
+        ...item,
+        rotation: newRot,
+        x: Math.max(w / 2 + WALL_PAD, Math.min(room.width  - w / 2 - WALL_PAD, item.x)),
+        y: Math.max(d / 2 + WALL_PAD, Math.min(room.length - d / 2 - WALL_PAD, item.y)),
+      };
+    }
+
+    // Check that the new position doesn't collide with other items
+    const others = current.filter((_, i) => i !== idx);
+    const collides = others.some(other => overlaps(newItem, other, CLEAR_BUFFER));
+    if (collides) continue; // reject without energy calculation
+
+    // Build new layout and score it
+    const newLayout = [...others.slice(0, idx), newItem, ...others.slice(idx)];
+    // Reconstruct in original order
+    const trial = current.map((orig, i) => i === idx ? newItem : orig);
+    const trialScore = scoreLayout(trial, room, fixedElements, focalPoint, weights).total;
+
+    // Metropolis acceptance criterion
+    const delta = trialScore - currentScore;
+    if (delta > 0 || Math.random() < Math.exp(delta / T)) {
+      current = trial;
+      currentScore = trialScore;
+      if (currentScore > bestScore) {
+        best = current.map(item => ({ ...item }));
+        bestScore = currentScore;
+      }
+    }
+  }
+
+  return { layout: best, scoreTotal: bestScore };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN EXPORT: Generate best layout for a given philosophy
 // ─────────────────────────────────────────────────────────────────────────────
 export function generateScoredLayout(room, furniture, fixedElements, focalPoint, philosophyId, candidatePool = null) {
@@ -528,8 +620,23 @@ export function generateScoredLayout(room, furniture, fixedElements, focalPoint,
   // Sort by total score descending
   scored.sort((a, b) => b.scores.total - a.scores.total);
 
-  const best = scored[0];
+  let best = scored[0];
   if (!best) return null;
+
+  // ── SA Refinement pass ────────────────────────────────────────────────────
+  // Take the best random candidate and run SA to squeeze out more quality.
+  // SA can escape local optima (e.g. sofa at 7ft might score better at 6.8ft
+  // with a slightly different chair rotation).
+  const refined = refineCandidateWithSA(
+    best.layout, room, fixedElements, focalPoint, weights
+  );
+  // Only use SA result if it genuinely improved the score
+  if (refined.scoreTotal > best.scores.total) {
+    best = {
+      layout: refined.layout,
+      scores: scoreLayout(refined.layout, room, fixedElements, focalPoint, weights)
+    };
+  }
 
   const explanation = generateExplanation(
     best.layout, room, fixedElements, focalPoint, best.scores, philosophyId

@@ -207,7 +207,8 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({
                       return (
                         <div className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
                           {metrics.map(m => {
-                            const val = Math.round((sb[m.key] || 0) * 100);
+                            // scoreBreakdown values are already 0-100 integers from the API
+                            const val = Math.min(100, Math.max(0, sb[m.key] || 0));
                             return (
                               <div key={m.key}>
                                 <div className="flex justify-between text-[10px] mb-0.5">
