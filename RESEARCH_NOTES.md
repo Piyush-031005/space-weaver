@@ -52,19 +52,136 @@ This is exactly Week 6 of our plan. The LLM for Week 6 is for **intent interpret
 
 ---
 
-## Competitive Landscape (What Exists)
+## Competitive Deep-Dive (Live-Researched, Oct 2026)
 
-| Product | What it does well | What it can't do |
+> These are NOT based on the PDF alone. I researched each app's current website, reviews, and pricing.
+
+---
+
+### 1. Planner 5D — Closest Competitor, But Still Manual at Core
+
+**What it actually does:**
+- Has "Automated Furniture Arrangement (AFA)" using neural networks — **but it only suggests, you still drag and drop manually afterward**
+- "Planner 5D Copilot" = natural language editor (e.g. "rearrange furniture") — proprietary LLM, not open
+- Floor Plan Recognition: upload a photo/blueprint → editable 2D project
+- Smart Wizard: guides you to pick a style → generates a starting layout
+
+**Pricing (2025–2026):**
+| Plan | Price | Key Limitation |
+|------|-------|---------------|
+| Free | $0 | Limited furniture catalog only |
+| Premium | ~$60/year | AI tools unlocked, 8,000+ items |
+| Professional | ~$400/year | 4K renders, CAD export |
+
+**Critical Gap vs Space Weaver:**
+- AI features are locked behind $60–$400/year paywall
+- No fit warnings ("this sofa is too large for your walkway")
+- No real product catalog with dimensions and pricing
+- No scored layout comparison ("Minimalist scores 81 on walkway, Cinema scores 65")
+- India pricing unclear — Western product catalog
+- **Their "AI" still requires manual refinement. No one-click "generate best layout."**
+
+---
+
+### 2. IKEA Kreativ — Great for IKEA, Useless for Everyone Else
+
+**What it actually does:**
+- AR/LiDAR room scan on iPhone → 3D room replica
+- "Erase" existing furniture from photo → virtual empty room
+- Manually browse and place IKEA products in the 3D space
+- Web "Room Builder" = manual dimension entry + manual furniture placement
+
+**Critical Gap vs Space Weaver:**
+- **Zero automatic layout generation** — confirmed directly from IKEA's support pages
+- **100% IKEA-locked** — cannot place non-IKEA furniture
+- No scoring, no fit warnings, no walkway analysis
+- No shopping list with budget
+- **If you want to buy a local sofa and a Pepperfry table, IKEA Kreativ is completely useless**
+
+---
+
+### 3. RoomSketcher — Floor Plan Drawing Tool, Not a Layout Optimizer
+
+**What it actually does:**
+- AI Convert: upload a blueprint image → digitized floor plan (walls, doors, windows only)
+- AI Render: photorealistic rendering of manually-placed furniture
+- FloorCapture: LiDAR iPhone scan → room shell
+- Manual furniture placement from a library
+
+**Pricing:** Freemium with paid subscription; credit-based rendering
+
+**Critical Gap vs Space Weaver:**
+- **No auto-furnish AI whatsoever** — confirmed from their own documentation
+- "AI" = digitizing floor plans and making renders look good. NOT placing furniture.
+- Users still manually drag every single item
+- No scoring, no fit warnings, no shopping list
+- **Designed for real estate agents and architects to draw plans, not for homeowners deciding what to buy**
+
+---
+
+### 4. Magicplan — Measurement Tool, Not a Design Tool
+
+**What it actually does:**
+- LiDAR/AR room scanning on iPhone → accurate floor plan with dimensions
+- Bluetooth laser meter integration for professional accuracy
+- Project documentation, estimating, Xactimate export
+- Primary users: **contractors, restoration professionals, insurance adjusters**
+
+**Critical Gap vs Space Weaver:**
+- **Measures rooms, does not design them at all**
+- No furniture catalog, no layout generation, no 3D visualization
+- Built for B2B professionals, not homeowners
+- **Completely different use case — but could be an upstream partner (scan → import to Space Weaver)**
+
+---
+
+### 5. Livspace India — Premium Full-Service, Funded $450M+
+
+**What it actually does:**
+- End-to-end home interior service: design → manufacture → install
+- AI mood boards, 3D rendering, AI cut concept-to-visual time by 60%
+- AI voice agents for lead nurturing, predictive supply chain
+- FY25 revenue: ₹1,460 crore (+23% YoY) — but laid off 12% workforce (1,000 people) in 2026
+- Funded: $450M+ from KKR, Khosla Ventures, Goldman Sachs
+
+**Critical Gap vs Space Weaver:**
+- **Not a self-serve tool** — requires booking a designer consultation
+- **Minimum project size is large** (full-room or full-home renovation)
+- Cannot help someone who wants to just check "will this sofa fit?"
+- **Moving toward AI-native organization** — which means they're automating designers away, not building a public tool
+
+---
+
+### 6. HomeLane India — SpaceCraft 3D (Designer-Only Tool)
+
+**What it actually does:**
+- Proprietary 3D tool used ONLY by HomeLane's own designers — **not available to public**
+- Real-time pricing engine in 3D: add/remove elements → cost updates live
+- ThreeJS + WebGL stack (same as us!)
+- AI cut first-design time from 3–4 hours → ~5 minutes
+
+**Critical Gap vs Space Weaver:**
+- **SpaceCraft is NOT a public product** — you cannot use it without booking HomeLane
+- Sells complete renovation projects (modular kitchens, wardrobes, full interiors)
+- Not useful for someone buying a single sofa or arranging an existing room
+- IPO planned in 12–24 months — focused on scale and operational AI, not product democratization
+
+---
+
+## The Real Market Gap (Updated from Live Research)
+
+After researching all apps, the picture is now very clear:
+
+| What users need | What exists | What's missing |
 |---|---|---|
-| IKEA Kreativ | Room scanning, IKEA product placement | Locked to IKEA; manual placement |
-| Planner 5D | Easy 2D/3D plans | Manual drag-and-drop; paid catalog |
-| RoomSketcher | Accurate floor plan drawing | Not auto-optimized layout |
-| Magicplan | Phone AR room scanning | Measures rooms, doesn't design them |
-| Homestyler | Good 3D renders | Visualization-led, not planning-led |
-| Livspace (India) | Full design-to-installation | Premium project-based; not self-serve |
-| HomeLane (India) | SpaceCraft 3D + real-time pricing | Same: sells projects, not free planner |
+| "Will this sofa fit in my room?" | Nothing that answers this precisely | Space Weaver fit warnings ✅ |
+| "Show me 3–4 genuinely different layouts" | Planner 5D suggests 1 layout, manually | Our scored multi-layout engine ✅ |
+| "I want non-IKEA products that fit my room" | IKEA Kreativ (IKEA only) | Multi-seller catalog with dimension filters ✅ |
+| "Explain WHY this layout is better" | None of them explain | Our plain-English scoring explanations ✅ |
+| "Free self-serve tool, no designer needed" | Planner 5D ($60+/yr), HomeLane (booking required) | Space Weaver free tier ✅ |
+| "Indian furniture sellers + handmade items" | Livspace/HomeLane (premium projects only) | Local seller marketplace ✅ |
 
-> **The Gap:** No existing product combines (1) auto-scored diverse layouts + (2) fit warnings with real dimensions + (3) multi-seller catalog + (4) explainability. That is Space Weaver's exact positioning.
+
 
 ---
 
