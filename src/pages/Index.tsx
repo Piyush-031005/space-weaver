@@ -35,6 +35,8 @@ const HeroFallback = () => (
   </div>
 );
 
+import { toast } from "sonner";
+
 const Index = () => {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -71,19 +73,30 @@ const Index = () => {
         body: JSON.stringify(payloadToUse)
       });
       
-      const data = await response.json();
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Invalid response from server: ${text.substring(0, 100)}`);
+      }
       
       setTimeout(() => {
         setIsGenerating(false);
         if (data && data.options) {
           navigate('/results', { state: { data, payloadToUse } });
+        } else if (data && data.error) {
+          console.error("API Error:", data.error);
+          toast.error(`AI Generation Failed: ${data.error}`);
         } else {
           console.error("No options returned from API:", data);
+          toast.error("Failed to generate layout: Invalid response from backend");
         }
       }, 1500);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate layout:", error);
+      toast.error(`Network or API Error: ${error.message || error}`);
       setIsGenerating(false);
     }
   };
