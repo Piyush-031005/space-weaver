@@ -1,5 +1,6 @@
-﻿import React from "react";
-import { Check } from "lucide-react";
+import React, { useState } from "react";
+import { Check, ShoppingCart } from "lucide-react";
+import ShoppingListPanel from "./ShoppingListPanel";
 
 interface LayoutOption {
   id: string;
@@ -24,6 +25,7 @@ interface LayoutGalleryProps {
   onOpen3D?: (index: number) => void;
   room?: { width: number; length: number };
   unit?: string;
+  furniture?: Array<{ id: string; type: string; width: number; depth: number; name?: string }>;
 }
 
 const LayoutGallery: React.FC<LayoutGalleryProps> = ({
@@ -33,7 +35,9 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({
   onOpen3D,
   room,
   unit = "ft",
+  furniture = [],
 }) => {
+  const [showShoppingList, setShowShoppingList] = useState(false);
   if (!options || options.length === 0) return null;
 
   const rWidth  = room?.width  || 20;
@@ -49,7 +53,19 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({
           <h2 className="font-display font-light text-4xl md:text-5xl lg:text-6xl text-foreground tracking-tight leading-none mb-5">
             12 Expert<br />Arrangements
           </h2>
-          <p className="text-muted-foreground text-base leading-relaxed max-w-lg">
+          <p className="text-muted-foreground text-base leading-relaxed mb-6">
+            Each layout scored on walkway clearance, focal alignment, natural light, and room balance.
+          </p>
+          {/* Shopping List button */}
+          <button
+            onClick={() => setShowShoppingList(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.4)', color: '#c4b5fd' }}
+          >
+            <ShoppingCart size={16} />
+            Shopping List &amp; Prices
+          </button>
+          <p className="text-muted-foreground text-base leading-relaxed max-w-lg mt-4">
             Each arrangement is authored by a distinct interior design philosophy. Select the configuration that best reflects your lifestyle and spatial priorities.
           </p>
         </div>
@@ -156,6 +172,14 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({
           })}
         </div>
       </div>
+
+      {/* Shopping List slide-in panel */}
+      <ShoppingListPanel
+        furniture={furniture}
+        room={room || { width: rWidth, length: rLength }}
+        isVisible={showShoppingList}
+        onClose={() => setShowShoppingList(false)}
+      />
     </section>
   );
 };
