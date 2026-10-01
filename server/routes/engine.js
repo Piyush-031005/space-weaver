@@ -2,6 +2,7 @@ import express from 'express';
 import { checkCollisions, resolveCollisions } from '../engines/collision.js';
 import { calculateClearance } from '../engines/clearance.js';
 import { generateGenome } from '../engines/genome.js';
+import { PHILOSOPHY_WEIGHTS } from '../engines/optimization/candidateGenerator.js';
 import { generateRoast } from '../engines/critic.js';
 import { calculateCognitiveLoad } from '../engines/cognitive.js';
 
@@ -45,6 +46,8 @@ router.post('/generate-layout', async (req, res) => {
     // 3. Generate 12 Expert Interior Design Configurations
     const philosophyLayouts = generateAllPhilosophies(room, furniture, fixedElements, focalPoint);
     const options = await Promise.all(philosophyLayouts.map(async (ph) => {
+      // v2: layout is already collision-free from Generate->Score->Pick engine
+      // Run a final resolveCollisions pass as a safety net only
       ph.layout = resolveCollisions(ph.layout, room, fixedElements);
       const collisions = checkCollisions(ph.layout);
       const clearanceScores = calculateClearance(room, fixedElements, ph.layout);
@@ -66,6 +69,9 @@ router.post('/generate-layout', async (req, res) => {
         circulationResult
       );
 
+      // Get scoring weights for this philosophy (for UI display)
+      const weights = PHILOSOPHY_WEIGHTS[ph.id] || {};
+
       return {
         id: ph.id,
         name: ph.name || ph.title,
@@ -85,7 +91,13 @@ router.post('/generate-layout', async (req, res) => {
         itemReasons: reasoningResult.itemReasons,
         affordances: affordanceResult,
         circulation: circulationResult,
-        focalPoint
+        focalPoint,
+        // v2 additions: score breakdown, plain-English explanation, fit warnings
+        scoreTotal: ph.scoreTotal || 0,
+        scoreBreakdown: ph.scoreBreakdown || {},
+        explanation: ph.explanation || '',
+        fitWarnings: ph.fitWarnings || [],
+        philosophyWeights: weights,
       };
     }));
 

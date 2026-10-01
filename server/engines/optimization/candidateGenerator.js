@@ -170,9 +170,14 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
   // Pre-compute focal point (TV wall / focal element position)
   const focal = focalPoint || { x: roomW / 2, y: 1.0 };
 
+  // Split candidates into 4 spatial zones to guarantee diversity across philosophies
+  // Zone 0: seating in top half | Zone 1: seating in bottom half
+  // Zone 2: seating left-biased | Zone 3: seating right-biased
+  const zoneSize = Math.floor(count / 4);
+
   for (let attempt = 0; attempt < count; attempt++) {
     const placed = [];
-    let valid = true;
+    const zone = Math.floor(attempt / zoneSize); // 0,1,2,3
 
     for (const item of furniture) {
       const typeKey = (item.type || 'default').toLowerCase().replace(/ /g, '_');
@@ -191,9 +196,24 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
         else if (wall === 2) { tx = roomW * (0.1 + Math.random() * 0.8); ty = roomL - d / 2 - 0.4 - Math.random() * 0.5; }
         else { tx = d / 2 + 0.4 + Math.random() * 0.5; ty = roomL * (0.1 + Math.random() * 0.8); }
       } else if (FOCAL_FACING_TYPES.has(typeKey)) {
-        // Seating: distribute across the lower 60–90% of the room facing the focal point
-        tx = roomW * (0.05 + Math.random() * 0.90);
-        ty = roomL * (0.35 + Math.random() * 0.55);
+        // Seating: zone-biased placement for guaranteed diversity
+        if (zone === 0) {
+          // Top-half seating (close to focal/TV)
+          tx = roomW * (0.10 + Math.random() * 0.80);
+          ty = roomL * (0.20 + Math.random() * 0.30);
+        } else if (zone === 1) {
+          // Bottom-half seating (far from TV, cozy back)
+          tx = roomW * (0.10 + Math.random() * 0.80);
+          ty = roomL * (0.55 + Math.random() * 0.35);
+        } else if (zone === 2) {
+          // Left-wall bias
+          tx = roomW * (0.05 + Math.random() * 0.35);
+          ty = roomL * (0.25 + Math.random() * 0.55);
+        } else {
+          // Right-wall bias
+          tx = roomW * (0.60 + Math.random() * 0.35);
+          ty = roomL * (0.25 + Math.random() * 0.55);
+        }
       } else if (CENTER_FLOAT_TYPES.has(typeKey)) {
         // Tables: float in middle third of room
         tx = roomW * (0.20 + Math.random() * 0.60);
