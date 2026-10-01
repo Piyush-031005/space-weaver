@@ -193,6 +193,84 @@ router.post('/log-choice', (req, res) => {
   res.json({ logged: true });
 });
 
+/**
+ * GET /api/catalog
+ * Returns the full furniture catalog with dimensions and prices.
+ * Used by the frontend to populate the furniture picker and shopping list.
+ */
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+router.get('/catalog', (req, res) => {
+  try {
+    const catalogPath = path.join(__dirname, '../data/furniture_catalog.json');
+    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
+    const { category, type } = req.query;
+    let items = catalog.items;
+    if (category) items = items.filter(i => i.category === category);
+    if (type) items = items.filter(i => i.type === type);
+    res.json({ items, total: items.length, version: catalog.version });
+  } catch (e) {
+    res.status(500).json({ error: 'Could not load catalog', detail: e.message });
+  }
+});
+
+/**
+ * POST /api/shopping-list
+ * Body: { furniture: [{type, width, depth}], room: {width, length} }
+ * Returns: matched catalog items + fit check per item + price range
+ * This is the "will it fit?" + "here's where to buy it" feature.
+ */
+router.post('/shopping-list', (req, res) => {
+  try {
+    const { furniture = [], room } = req.body;
+    const catalogPath = path.join(__dirname, '../data/furniture_catalog.json');
+    const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
+
+    const shoppingList = furniture.map(item => {
+      // Find best catalog match by type
+      const matches = catalog.items.filter(c => c.type === item.type);
+      const best = matches[0] || null;
+
+      // Fit check: does this item leave enough walkway space?
+      const itemW = item.width || (best ? best.widthFt : 0);
+      const itemD = item.depth || (best ? best.depthFt : 0);
+      const roomW = room?.width || 0;
+      const roomL = room?.length || 0;
+
+      const MIN_WALKWAY_FT = 2.5;
+      const fitsWidth = (roomW - itemW) >= MIN_WALKWAY_FT * 2;
+      const fitsLength = (roomL - itemD) >= MIN_WALKWAY_FT * 2;
+      const fits = fitsWidth && fitsLength;
+
+      const warnings = [];
+      if (!fitsWidth) warnings.push(`Width tight: ${(roomW - itemW).toFixed(1)}ft remaining (min ${MIN_WALKWAY_FT * 2}ft needed)`);
+      if (!fitsLength) warnings.push(`Depth tight: ${(roomL - itemD).toFixed(1)}ft remaining`);
+
+      return {
+        itemType: item.type,
+        itemId: item.id,
+        catalogMatch: best ? {
+          name: best.name,
+          widthFt: best.widthFt,
+          depthFt: best.depthFt,
+          widthCm: best.widthCm,
+          depthCm: best.depthCm,
+          priceRangeINR: best.priceRangeINR,
+          brands: best.commonBrands,
+          notes: best.notes,
+        } : null,
+        fitsRoom: fits,
+        fitWarnings: warnings,
+      };
+    });
+
+    res.json({ shoppingList, room });
+  } catch (e) {
+    res.status(500).json({ error: 'Shopping list generation failed', detail: e.message });
+  }
+});
+
 router.post('/simulate-lifestyle', (req, res) => {
   res.json({ status: 'not-implemented' });
 });
