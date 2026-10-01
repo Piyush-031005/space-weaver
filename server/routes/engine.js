@@ -14,6 +14,27 @@ import { calculateCirculationPaths } from '../engines/geometry/circulation.js';
 import { generateAllPhilosophies } from '../engines/optimization/philosophyEngine.js';
 import { generateLayoutReasoning } from '../engines/explainability/reasoning.js';
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure data directory exists for logging
+const DATA_DIR = path.join(__dirname, '../data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const LOG_FILE = path.join(DATA_DIR, 'layout_log.jsonl');
+
+/** Append one JSON line to the layout log (non-blocking) */
+function logLayoutEvent(event) {
+  try {
+    fs.appendFileSync(LOG_FILE, JSON.stringify(event) + '\n');
+  } catch (e) {
+    // Logging must never crash the server
+  }
+}
+
 const router = express.Router();
 
 router.post('/analyze-space', (req, res) => {
@@ -134,11 +155,42 @@ router.post('/generate-layout', async (req, res) => {
       });
     }
 
+    // Log the generation event for future ML training data
+    logLayoutEvent({
+      event: 'layout_generated',
+      timestamp: new Date().toISOString(),
+      sessionId: req.headers['x-session-id'] || 'anonymous',
+      room,
+      furnitureCount: (furniture || []).length,
+      furnitureTypes: (furniture || []).map(f => f.type),
+      fixedElementCount: (fixedElements || []).length,
+      vibe,
+      philosophiesReturned: options.map(o => ({ id: o.id, scoreTotal: o.scoreTotal })),
+    });
+
     res.json({ options, focalPoint, relationshipGraph: graphResult });
   } catch (error) {
     console.error("HSRE Layout Generation Error:", error);
     res.status(500).json({ error: "Failed to generate layout", stack: error.stack });
   }
+});
+
+/**
+ * POST /api/log-choice
+ * Called by the frontend when a user clicks on a layout card.
+ * This is our user preference signal — critical for future scoring model training.
+ */
+router.post('/log-choice', (req, res) => {
+  const { sessionId, selectedPhilosophyId, roomWidth, roomLength } = req.body;
+  logLayoutEvent({
+    event: 'layout_chosen',
+    timestamp: new Date().toISOString(),
+    sessionId: sessionId || 'anonymous',
+    selectedPhilosophyId,
+    roomWidth,
+    roomLength,
+  });
+  res.json({ logged: true });
 });
 
 router.post('/simulate-lifestyle', (req, res) => {

@@ -53,10 +53,15 @@ This approach keeps the existing collision/clearance code as the **hard constrai
 
 ### 🔴 MONTH 1 — Fix the Engine (Weeks 1–4)
 
-#### Week 1–2: Candidate Generator + Scorer
+#### Week 1–2: Candidate Generator + Scorer ✅ DONE
 
-**What to build:**  
-Replace the zone-template system in `resolveRelationshipLayout` with a generate-score-pick loop.
+> **Research backing:** Make It Home (SIGGRAPH 2011), Merrell et al. (SIGGRAPH 2011) — cost-function + search is proven superior to rule/template systems.
+
+**What was built:**  
+`server/engines/optimization/candidateGenerator.js` — zone-biased candidate pool + 6-metric weighted scorer.  
+`server/engines/optimization/philosophyEngine.js` — rewritten to use Generate→Score→Pick.
+
+**Next upgrade (research-recommended):** Add **Simulated Annealing** refinement pass on top of the random candidate pool. SA (used in Make It Home) escapes local optima that pure random restarts miss. Add as `refineCandidateWithSA()` in `candidateGenerator.js`.
 
 **How it works:**
 ```
@@ -87,6 +92,17 @@ These weights force the engine to find genuinely different rooms.
 
 **New file to create:** `server/engines/optimization/candidateGenerator.js`  
 **File to rewrite:** `server/engines/optimization/philosophyEngine.js`
+
+---
+
+#### Week 1–2 also: Start Data Logging NOW
+
+> **Research says:** *"Log layouts shown, choices and ratings from day one. After enough data, train a learned scorer or small layout model."*  
+> Every week without logging = data you can never recover. The future Gen 3 model (ATISS-style) needs this.
+
+**What to add to `server/routes/engine.js`:**
+- Append a JSON line to `server/data/layout_log.jsonl` on every `/api/generate-layout` call: `{ timestamp, room, furniture, philosophiesReturned, sessionId }`
+- New route `POST /api/log-choice` — called by frontend when user clicks a layout card: `{ sessionId, selectedPhilosophyId }`
 
 ---
 
@@ -195,9 +211,11 @@ Not a full marketplace. Just a JSON file of 20–30 real products (handmade, loc
 
 ---
 
-### 🟢 MONTH 3 — Get Real Users (Weeks 9–12)
+### 🟢 MONTH 3 — Real Users + First B2B Pilot (Weeks 9–12)
 
-#### Week 9: Launch to 20 Real People
+> **Research-backed B2B:** Exam hall seating is estimated at 3–4 weeks effort, has clear paying customers (schools, coaching centres, exam cells), and the geometry constraints are well-defined. This is the safest first B2B vertical. [Research survey, Section 7]
+
+#### Week 9: Launch to 20 Real Home Users + Start Exam Hall Pilot
 
 **Who:** Friends, family, PG/hostel residents, anyone moving into a new flat.  
 **How:** Send the link + say "I built this, can you try it and tell me where you got confused?"
@@ -275,13 +293,33 @@ The weight-based scoring system you build in Month 1 is already designed to supp
 
 ## What NOT To Build in 3 Months
 
-- ❌ Custom-trained ML model (no data yet)
-- ❌ Hospital / parking / warehouse features
+- ❌ Custom-trained ML model (no data yet — must log first, train later)
+- ❌ Hospital / parking features (need domain experts + local Indian regulations — NABH norms, municipal codes)
 - ❌ User accounts and saved layouts (nice-to-have, not critical)
 - ❌ Drag-and-drop in 3D
 - ❌ Full e-commerce marketplace with payments
 - ❌ Mobile app
 - ❌ Non-rectangular rooms
+- ❌ Image-generation style previews (DecoMind approach — looks good but ignores real dimensions; useless for 'will it fit?' decisions per research)
+
+## Corrected Pitch Language (Research-Accurate)
+
+| ❌ Don't say | ✅ Say instead | Why |
+|---|---|---|
+| "Zero overlap guaranteed" | "Collision-checked with spiral resolution" | Research warns against absolute claims before broad testing |
+| "No AI or LLM used" | "Geometry is deterministic; AI is used for understanding users and learning preferences" | We use Claude for roast text today; LLM for intent in Week 6 |
+| "12 unique AI designs" | "12 scored layouts with different spatial priorities" | Research shows Gen 1 systems produce near-identical results; our Gen 2 engine now diverges by metric |
+
+## Engine Evaluation Metrics (from SceneEval benchmark)
+Run these on every test room and publish results in README:
+
+| Metric | Target | How to measure |
+|---|---|---|
+| Overlap rate | 0% | `checkCollisions()` — count pairs with intersection |
+| Out-of-bounds rate | 0% | Check all items fully inside room boundary |
+| Walkway compliance | >90% of layouts | Door-to-seating path ≥ 2.5ft |
+| Diversity score | >15% avg positional spread | `layoutDiversity()` between philosophy outputs |
+| User preference | Track via `POST /api/log-choice` | Which philosophy users click most |
 
 ---
 
@@ -305,14 +343,20 @@ Everything else builds on this foundation.
 
 | Week | Deliverable | Done? |
 |------|-------------|-------|
-| 1–2  | Candidate Generator + Scorer (philosophies diverge visually) | ⬜ |
+| 1–2  | Candidate Generator + Scorer (philosophies diverge visually) | ✅ |
+| 1–2  | Data logging: layout_log.jsonl + /api/log-choice endpoint | ⬜ |
 | 3    | Door swing arcs + window zones as real constraints | ⬜ |
-| 4    | Furniture catalog + fit warnings + plain English explanations | ⬜ |
-| 5    | Shopping list panel + PNG export | ⬜ |
-| 6    | LLM natural language brief → scoring weights | ⬜ |
-| 7    | Seed marketplace with 20–30 real products | ⬜ |
-| 8    | 2D visual polish + usage data logging | ⬜ |
-| 9    | Launch to 20 real users, record observations | ⬜ |
-| 10   | Fix top 5 user-reported problems | ⬜ |
+| 3    | SA refinement pass on top of random candidate pool | ⬜ |
+| 4    | Furniture catalog (30 items w/ real dimensions) + fit warnings | ⬜ |
+| 4    | Evaluation metrics script (overlap, OOB, walkway, diversity) | ⬜ |
+| 5    | Shopping list panel + PNG/WhatsApp export | ⬜ |
+| 6    | LLM intent layer: text brief → scoring weight overrides | ⬜ |
+| 7    | Seed marketplace: 20–30 real products by hand | ⬜ |
+| 8    | 2D visual polish (door arcs, window markers, walkway highlights) | ⬜ |
+| 9    | Launch to 20 real home users; start exam hall pilot conversations | ⬜ |
+| 10   | Fix top 5 user problems; build exam hall constraint module | ⬜ |
 | 11   | 5 reels/posts + 3–5 seller outreach emails | ⬜ |
-| 12   | Measure metrics, decide next wedge | ⬜ |
+| 12   | Measure all 5 engine metrics; decide: home deeper or B2B first | ⬜ |
+
+---
+> 📄 See [RESEARCH_NOTES.md](RESEARCH_NOTES.md) for full literature summary, market numbers, and paper references.
