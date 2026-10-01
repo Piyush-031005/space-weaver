@@ -50,6 +50,26 @@ const DesignResults = () => {
   const [reopen3DAfterCustomizing, setReopen3DAfterCustomizing] = useState(false);
   const [currentVibe, setCurrentVibe] = useState(payloadToUse?.vibe || "cozy");
 
+  // Session ID for user preference logging (persisted per page load)
+  const sessionId = React.useRef(`sess_${Date.now()}_${Math.random().toString(36).slice(2)}`).current;
+
+  // Log user's layout choice for future ML training
+  const handleLayoutSelect = (idx: number) => {
+    setActiveOptionIndex(idx);
+    const chosen = currentData?.options?.[idx];
+    if (!chosen) return;
+    fetch('/api/log-choice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        selectedPhilosophyId: chosen.id,
+        roomWidth: payloadToUse?.room?.width,
+        roomLength: payloadToUse?.room?.length,
+      }),
+    }).catch(() => {}); // non-blocking, never crash UI
+  };
+
   useEffect(() => {
     if (shareId) {
       fetch(`/api/genome/${shareId}`)
@@ -285,13 +305,14 @@ const DesignResults = () => {
         <LayoutGallery 
           options={currentData.options} 
           activeIndex={activeOptionIndex}
-          onSelect={setActiveOptionIndex} 
+          onSelect={handleLayoutSelect}
           onOpen3D={(idx) => {
-            setActiveOptionIndex(idx);
+            handleLayoutSelect(idx);
             setIs3DStudioOpen(true);
           }}
           room={payloadToUse?.room}
           unit={payloadToUse?.unit}
+          furniture={payloadToUse?.furniture || []}
         />
         
         {activeOption && (

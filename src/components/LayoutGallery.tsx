@@ -103,70 +103,168 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({
 
                     {opt.structuralElements?.map((el: any, elIdx: number) => {
                       let x = 0, y = 0, w = 0, h = 0;
+                      let arcX = 0, arcY = 0, doorSwingD = '';
                       if (el.wall === "top")    { x = el.position - el.width / 2; y = 0;              w = el.width; h = 0.5; }
                       if (el.wall === "bottom") { x = el.position - el.width / 2; y = rLength - 0.5; w = el.width; h = 0.5; }
                       if (el.wall === "left")   { x = 0;             y = el.position - el.width / 2;  w = 0.5; h = el.width; }
                       if (el.wall === "right")  { x = rWidth - 0.5;  y = el.position - el.width / 2;  w = 0.5; h = el.width; }
-                      return <rect key={elIdx} x={x} y={y} width={w} height={h} fill={el.type === "window" ? "#38bdf8" : "#fbbf24"} opacity={0.65} />;
+
+                      // Door swing arc
+                      if (el.type === 'door') {
+                        const r = el.width || 2.5;
+                        if (el.wall === 'top')    doorSwingD = `M ${x} 0.5 A ${r} ${r} 0 0 1 ${x + r} ${0.5 + r}`;
+                        if (el.wall === 'bottom') doorSwingD = `M ${x} ${rLength - 0.5} A ${r} ${r} 0 0 0 ${x + r} ${rLength - 0.5 - r}`;
+                        if (el.wall === 'left')   doorSwingD = `M 0.5 ${y} A ${r} ${r} 0 0 1 ${0.5 + r} ${y + r}`;
+                        if (el.wall === 'right')  doorSwingD = `M ${rWidth - 0.5} ${y} A ${r} ${r} 0 0 0 ${rWidth - 0.5 - r} ${y + r}`;
+                      }
+
+                      return (
+                        <g key={elIdx}>
+                          <rect x={x} y={y} width={w} height={h}
+                            fill={el.type === 'window' ? '#38bdf8' : '#fbbf24'} opacity={0.7} />
+                          {doorSwingD && (
+                            <path d={doorSwingD} fill="none"
+                              stroke="rgba(251,191,36,0.35)" strokeWidth="0.12" strokeDasharray="0.3 0.2" />
+                          )}
+                        </g>
+                      );
                     })}
 
-                    {opt.layout?.map((item: any, iIdx: number) => (
-                      <g key={iIdx} transform={`translate(${item.x},${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}>
-                        <rect
-                          x={-item.width / 2} y={-item.depth / 2}
-                          width={item.width} height={item.depth}
-                          fill="rgba(255,255,255,0.10)"
-                          stroke={isSelected ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.55)"}
-                          strokeWidth="0.13" rx="0.12"
-                        />
-                        <text
-                          x="0" y="0"
-                          fontSize={Math.min(item.width, item.depth) * 0.28}
-                          fill="rgba(255,255,255,0.65)"
-                          textAnchor="middle"
-                          alignmentBaseline="middle"
-                          fontFamily="monospace"
-                        >
-                          {item.type}
-                        </text>
-                      </g>
-                    ))}
+                    {/* Furniture items — color-coded by type */}
+                    {opt.layout?.map((item: any, iIdx: number) => {
+                      const type = (item.type || '').toLowerCase();
+                      // Color by category
+                      const fill = type === 'sofa' || type === 'chair' || type === 'armchair' || type === 'ottoman'
+                        ? 'rgba(139,92,246,0.35)'  // seating: purple
+                        : type === 'table' || type === 'dining_table' || type === 'coffee_table'
+                        ? 'rgba(20,184,166,0.30)'  // tables: teal
+                        : type === 'bed'
+                        ? 'rgba(59,130,246,0.30)'  // bed: blue
+                        : type === 'tv' || type === 'bookshelf' || type === 'wardrobe' || type === 'sideboard'
+                        ? 'rgba(245,158,11,0.30)'  // storage/media: amber
+                        : type === 'desk'
+                        ? 'rgba(34,197,94,0.25)'   // desk: green
+                        : type === 'rug'
+                        ? 'rgba(255,255,255,0.04)'  // rug: very subtle
+                        : 'rgba(255,255,255,0.12)'; // default
+                      const stroke = type === 'sofa' || type === 'chair' || type === 'armchair' || type === 'ottoman'
+                        ? 'rgba(167,139,250,0.85)'
+                        : type === 'table' || type === 'dining_table'
+                        ? 'rgba(45,212,191,0.75)'
+                        : type === 'bed'
+                        ? 'rgba(96,165,250,0.80)'
+                        : type === 'tv' || type === 'bookshelf' || type === 'wardrobe' || type === 'sideboard'
+                        ? 'rgba(251,191,36,0.70)'
+                        : type === 'desk'
+                        ? 'rgba(74,222,128,0.70)'
+                        : isSelected ? 'rgba(255,255,255,0.80)' : 'rgba(255,255,255,0.45)';
+                      return (
+                        <g key={iIdx} transform={`translate(${item.x},${item.y}) rotate(${(item.rotation || 0) * (180 / Math.PI)})`}>
+                          <rect
+                            x={-item.width / 2} y={-item.depth / 2}
+                            width={item.width} height={item.depth}
+                            fill={fill} stroke={stroke} strokeWidth="0.13" rx="0.15"
+                          />
+                          <text
+                            x="0" y="0"
+                            fontSize={Math.min(item.width, item.depth) * 0.26}
+                            fill={stroke}
+                            textAnchor="middle" alignmentBaseline="middle"
+                            fontFamily="monospace"
+                          >
+                            {item.type?.slice(0, 3).toUpperCase()}
+                          </text>
+                        </g>
+                      );
+                    })}
                   </svg>
                 </div>
 
-                <div className="flex flex-col flex-1 px-5 pt-5 pb-6">
-                  <p className="text-[10px] font-mono tracking-[0.25em] uppercase text-muted-foreground mb-2">
-                    {opt.bestFor || "Spatial Configuration"}
-                  </p>
-                  <h3 className="font-display text-xl font-medium text-foreground mb-3 leading-snug">
-                    {opt.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed flex-grow mb-6">
-                    {opt.philosophyDescription || opt.desc}
-                  </p>
+                  <div className="flex flex-col flex-1 px-5 pt-4 pb-5">
+                    <p className="text-[10px] font-mono tracking-[0.25em] uppercase text-muted-foreground mb-1.5">
+                      {opt.bestFor || "Spatial Configuration"}
+                    </p>
+                    <h3 className="font-display text-lg font-medium text-foreground mb-2 leading-snug">
+                      {opt.name}
+                    </h3>
 
-                  <div className="flex items-center gap-4 pt-4 border-t border-border/20">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onSelect(idx); }}
-                      className={`text-sm font-medium tracking-wide transition-colors ${
-                        isSelected
-                          ? "text-foreground underline underline-offset-4"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {isSelected ? "Selected" : "Select"}
-                    </button>
-                    {onOpen3D && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onSelect(idx); onOpen3D(idx); }}
-                        className="ml-auto px-4 py-2 bg-foreground text-background text-xs font-semibold tracking-widest uppercase hover:opacity-75 transition-opacity"
-                        title="Open Fullscreen 3D Studio"
-                      >
-                        3D View
-                      </button>
+                    {/* Plain-English explanation from the engine */}
+                    {opt.explanation && (
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-3 italic">
+                        "{opt.explanation}"
+                      </p>
                     )}
+
+                    {/* Score breakdown bars */}
+                    {opt.scoreBreakdown && (() => {
+                      const sb = opt.scoreBreakdown;
+                      const metrics = [
+                        { key: 'walkway',    label: 'Walkway',  color: '#22c55e' },
+                        { key: 'focal',      label: 'Focal',    color: '#a78bfa' },
+                        { key: 'light',      label: 'Light',    color: '#fbbf24' },
+                        { key: 'balance',    label: 'Balance',  color: '#38bdf8' },
+                      ];
+                      return (
+                        <div className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
+                          {metrics.map(m => {
+                            const val = Math.round((sb[m.key] || 0) * 100);
+                            return (
+                              <div key={m.key}>
+                                <div className="flex justify-between text-[10px] mb-0.5">
+                                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{m.label}</span>
+                                  <span style={{ color: m.color, fontWeight: 600 }}>{val}</span>
+                                </div>
+                                <div style={{ height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${val}%`, height: '100%', background: m.color, borderRadius: '2px', transition: 'width 0.6s ease' }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Fit warnings */}
+                    {opt.fitWarnings && opt.fitWarnings.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {opt.fitWarnings.slice(0, 2).map((w: string, wi: number) => (
+                          <span key={wi} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                            style={{ background: 'rgba(245,158,11,0.12)', color: '#fcd34d', border: '1px solid rgba(245,158,11,0.25)' }}>
+                            ⚠️ {w}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 pt-3 border-t border-border/20 mt-auto">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onSelect(idx); }}
+                        className={`text-sm font-medium tracking-wide transition-colors ${
+                          isSelected
+                            ? "text-foreground underline underline-offset-4"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {isSelected ? '✓ Selected' : 'Select'}
+                      </button>
+                      {/* Total score pill */}
+                      {opt.scoreTotal !== undefined && (
+                        <span className="ml-auto text-[11px] font-mono px-2.5 py-1 rounded-full"
+                          style={{ background: 'rgba(139,92,246,0.12)', color: '#c4b5fd', border: '1px solid rgba(139,92,246,0.25)' }}>
+                          Score {Math.round(opt.scoreTotal)}
+                        </span>
+                      )}
+                      {onOpen3D && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onSelect(idx); onOpen3D(idx); }}
+                          className="px-3 py-1.5 bg-foreground text-background text-xs font-semibold tracking-widest uppercase hover:opacity-75 transition-opacity rounded"
+                          title="Open Fullscreen 3D Studio"
+                        >
+                          3D
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
               </div>
             );
           })}
