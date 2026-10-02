@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface CatalogMatch {
+  id: string;
   name: string;
   widthFt: number;
   depthFt: number;
@@ -9,13 +10,20 @@ interface CatalogMatch {
   priceRangeINR: string;
   brands: string[];
   notes: string;
+  wallAdjacent?: boolean;
 }
 
 interface ShoppingItem {
-  itemType: string;
   itemId: string;
+  itemType: string;
+  itemName: string;
+  placedDims: { widthFt: number; depthFt: number };
   catalogMatch: CatalogMatch | null;
+  alternatives: CatalogMatch[];
+  matchQuality: 'exact' | 'close' | 'approximate' | null;
   fitsRoom: boolean;
+  gapWidth: number;
+  gapDepth: number;
   fitWarnings: string[];
 }
 
@@ -53,12 +61,9 @@ const ShoppingListPanel: React.FC<ShoppingListPanelProps> = ({ furniture, room, 
       .then(data => {
         const list: ShoppingItem[] = data.shoppingList || [];
         setShoppingList(list);
-        let min = 0, max = 0;
-        list.forEach(item => {
-          const p = item.catalogMatch?.priceRangeINR?.split('-').map(Number);
-          if (p?.length === 2) { min += p[0]; max += p[1]; }
-        });
-        setTotalMin(min); setTotalMax(max);
+        // Use server-computed budget totals
+        setTotalMin(data.budgetMin || 0);
+        setTotalMax(data.budgetMax || 0);
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -108,12 +113,24 @@ const ShoppingListPanel: React.FC<ShoppingListPanelProps> = ({ furniture, room, 
 
           {!loading && !error && shoppingList.map((item, idx) => {
             const m = item.catalogMatch;
+            const mqColor = item.matchQuality === 'exact' ? '#22c55e'
+              : item.matchQuality === 'close' ? '#fbbf24' : '#94a3b8';
+            const mqLabel = item.matchQuality === 'exact' ? '✓ Exact'
+              : item.matchQuality === 'close' ? '~ Close' : '≈ Approx';
             return (
               <div key={item.itemId || idx} className={`sl-item ${item.fitsRoom ? 'ok' : 'warn'}`}>
                 <div className="sl-item-row">
                   <span className="sl-icon">{TYPE_ICONS[item.itemType] || TYPE_ICONS.default}</span>
                   <div className="sl-item-info">
-                    <div className="sl-item-name">{m?.name || item.itemType}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                      <div className="sl-item-name">{m?.name || item.itemName}</div>
+                      {item.matchQuality && (
+                        <span style={{ fontSize: '0.66rem', color: mqColor, border: `1px solid ${mqColor}30`,
+                          background: `${mqColor}15`, borderRadius: '10px', padding: '1px 6px', flexShrink: 0 }}>
+                          {mqLabel}
+                        </span>
+                      )}
+                    </div>
                     {m && <div className="sl-dims">{m.widthFt}×{m.depthFt}ft · {m.widthCm}×{m.depthCm}cm</div>}
                   </div>
                   <div className="sl-right">

@@ -213,13 +213,15 @@ router.get('/catalog', (req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'Could not load catalog', detail: e.message });
   }
-});
-
-/**
+});/**
  * POST /api/shopping-list
- * Body: { furniture: [{type, width, depth}], room: {width, length} }
- * Returns: matched catalog items + fit check per item + price range
- * This is the "will it fit?" + "here's where to buy it" feature.
+ * Body: { furniture: [{id, type, width, depth, name?}], room: {width, length} }
+ *
+ * Returns per item:
+ *  - Best-matching catalog item by TYPE + closest DIMENSIONS (not just first match)
+ *  - Fit check with exact gap measurements ("1.5ft gap on width side — too tight")
+ *  - Up to 3 alternative catalog matches so the user can choose
+ *  - Total budget estimate
  */
 router.post('/shopping-list', (req, res) => {
   try {
@@ -227,45 +229,100 @@ router.post('/shopping-list', (req, res) => {
     const catalogPath = path.join(__dirname, '../data/furniture_catalog.json');
     const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
 
+    const MIN_WALKWAY_FT = 2.5;
+    const roomW = room?.width || 0;
+    const roomL = room?.length || 0;
+
+    /**
+     * Size-distance score between a placed item (width, depth in ft)
+     * and a catalog item. Returns 0 (perfect) to Infinity (very different).
+     * Normalised so a 1ft difference in width = distance of 1.0.
+     */
+    function sizeDistance(itemW, itemD, catalogItem) {
+      const dw = Math.abs(itemW - catalogItem.widthFt);
+      const dd = Math.abs(itemD - catalogItem.depthFt);
+      return dw + dd; // Manhattan distance in ft
+    }
+
     const shoppingList = furniture.map(item => {
-      // Find best catalog match by type
-      const matches = catalog.items.filter(c => c.type === item.type);
-      const best = matches[0] || null;
+      const itemW = item.width || 0;
+      const itemD = item.depth || 0;
 
-      // Fit check: does this item leave enough walkway space?
-      const itemW = item.width || (best ? best.widthFt : 0);
-      const itemD = item.depth || (best ? best.depthFt : 0);
-      const roomW = room?.width || 0;
-      const roomL = room?.length || 0;
+      // 1. Get all same-type catalog items
+      const byType = catalog.items.filter(c => c.type === item.type);
 
-      const MIN_WALKWAY_FT = 2.5;
-      const fitsWidth = (roomW - itemW) >= MIN_WALKWAY_FT * 2;
-      const fitsLength = (roomL - itemD) >= MIN_WALKWAY_FT * 2;
-      const fits = fitsWidth && fitsLength;
+      // 2. Sort by dimensional closeness (closest first)
+      const ranked = [...byType].sort(
+        (a, b) => sizeDistance(itemW, itemD, a) - sizeDistance(itemW, itemD, b)
+      );
+
+      const best   = ranked[0] || null;
+      const alts   = ranked.slice(1, 3);   // up to 2 alternatives
+
+      // 3. Use placed dimensions for fit check (most accurate)
+      const useW = itemW || (best ? best.widthFt : 0);
+      const useD = itemD || (best ? best.depthFt : 0);
+
+      // 4. Gap calculations
+      const gapW = roomW - useW;
+      const gapD = roomL - useD;
+      const fitsW = gapW >= MIN_WALKWAY_FT * 2;
+      const fitsD = gapD >= MIN_WALKWAY_FT * 2;
+      const fits  = fitsW && fitsD;
 
       const warnings = [];
-      if (!fitsWidth) warnings.push(`Width tight: ${(roomW - itemW).toFixed(1)}ft remaining (min ${MIN_WALKWAY_FT * 2}ft needed)`);
-      if (!fitsLength) warnings.push(`Depth tight: ${(roomL - itemD).toFixed(1)}ft remaining`);
+      if (!fitsW) warnings.push(
+        `Width: ${gapW.toFixed(1)}ft gap remaining — need ${(MIN_WALKWAY_FT * 2).toFixed(0)}ft (2×walkway)`
+      );
+      if (!fitsD) warnings.push(
+        `Depth: ${gapD.toFixed(1)}ft gap remaining — need ${(MIN_WALKWAY_FT * 2).toFixed(0)}ft (2×walkway)`
+      );
+
+      // 5. Size match quality (how close is the best catalog item to what they placed?)
+      const sizeDiff = best ? sizeDistance(useW, useD, best) : null;
+      const matchQuality = sizeDiff === null ? null
+        : sizeDiff < 0.5 ? 'exact'
+        : sizeDiff < 1.5 ? 'close'
+        : 'approximate';
+
+      const buildMatch = c => c ? {
+        id:           c.id,
+        name:         c.name,
+        widthFt:      c.widthFt,
+        depthFt:      c.depthFt,
+        widthCm:      c.widthCm,
+        depthCm:      c.depthCm,
+        priceRangeINR: c.priceRangeINR,
+        brands:       c.commonBrands,
+        notes:        c.notes,
+        wallAdjacent: c.wallAdjacent,
+      } : null;
 
       return {
-        itemType: item.type,
-        itemId: item.id,
-        catalogMatch: best ? {
-          name: best.name,
-          widthFt: best.widthFt,
-          depthFt: best.depthFt,
-          widthCm: best.widthCm,
-          depthCm: best.depthCm,
-          priceRangeINR: best.priceRangeINR,
-          brands: best.commonBrands,
-          notes: best.notes,
-        } : null,
-        fitsRoom: fits,
-        fitWarnings: warnings,
+        itemId:         item.id,
+        itemType:       item.type,
+        itemName:       item.name || item.type,
+        placedDims:     { widthFt: useW, depthFt: useD },
+        catalogMatch:   buildMatch(best),
+        alternatives:   alts.map(buildMatch),
+        matchQuality,                     // 'exact' | 'close' | 'approximate'
+        fitsRoom:       fits,
+        gapWidth:       parseFloat(gapW.toFixed(2)),
+        gapDepth:       parseFloat(gapD.toFixed(2)),
+        minWalkway:     MIN_WALKWAY_FT,
+        fitWarnings:    warnings,
       };
     });
 
-    res.json({ shoppingList, room });
+    // Budget totals
+    let budgetMin = 0, budgetMax = 0;
+    shoppingList.forEach(({ catalogMatch }) => {
+      if (!catalogMatch?.priceRangeINR) return;
+      const parts = catalogMatch.priceRangeINR.split('-').map(Number);
+      if (parts.length === 2) { budgetMin += parts[0]; budgetMax += parts[1]; }
+    });
+
+    res.json({ shoppingList, room, budgetMin, budgetMax });
   } catch (e) {
     res.status(500).json({ error: 'Shopping list generation failed', detail: e.message });
   }
