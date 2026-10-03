@@ -13,6 +13,7 @@ import { evaluateAffordanceClearances } from '../engines/intelligence/affordance
 import { calculateCirculationPaths } from '../engines/geometry/circulation.js';
 import { generateAllPhilosophies } from '../engines/optimization/philosophyEngine.js';
 import { generateLayoutReasoning } from '../engines/explainability/reasoning.js';
+import { parseIntent } from '../engines/intent/intentParser.js';
 
 import fs from 'fs';
 import path from 'path';
@@ -44,7 +45,16 @@ router.post('/analyze-space', (req, res) => {
 
 router.post('/generate-layout', async (req, res) => {
   try {
-    const { room, structuralElements, furniture, vibe } = req.body;
+    const { room, structuralElements, furniture, vibe, prompt } = req.body;
+
+    // ── Intent Layer: Parse natural language prompt if provided ─────────────
+    // e.g. "small room, I study at night, want cozy vibes"
+    // Returns philosophyId hint + weight overrides + explanation
+    const intent = prompt ? parseIntent(prompt, vibe || 'cozy') : null;
+    // intent.philosophyId can be used to reorder/prioritise philosophies later
+    // intent.explanation shown to user as "Why we chose this layout"
+    // intent.signals logged for future ML analysis
+
     const fixedElements = (structuralElements || []).map(el => {
       let x = el.x !== undefined ? el.x : 0;
       let y = el.y !== undefined ? el.y : 0;
@@ -165,10 +175,12 @@ router.post('/generate-layout', async (req, res) => {
       furnitureTypes: (furniture || []).map(f => f.type),
       fixedElementCount: (fixedElements || []).length,
       vibe,
+      prompt: prompt || null,
+      intentSignals: intent?.signals || [],
       philosophiesReturned: options.map(o => ({ id: o.id, scoreTotal: o.scoreTotal })),
     });
 
-    res.json({ options, focalPoint, relationshipGraph: graphResult });
+    res.json({ options, focalPoint, relationshipGraph: graphResult, intent });
   } catch (error) {
     console.error("HSRE Layout Generation Error:", error);
     res.status(500).json({ error: "Failed to generate layout", stack: error.stack });
