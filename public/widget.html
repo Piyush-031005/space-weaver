@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Space Weaver — Will It Fit? Widget</title>
+  <meta name="description" content="Embed this widget on your furniture store to show customers if a sofa, bed, or wardrobe will fit their room — before they buy.">
+
+  <!-- Embed instructions for sellers:
+       <script src="https://spaceweaver.in/widget.js" data-item-type="sofa" data-item-width="6.5" data-item-depth="3" data-item-name="Milano 3-Seater Sofa" data-price="49999"></script>
+       OR use this standalone HTML file for self-hosted embed.
+  -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0d14;
+      --surface: #111520;
+      --border: rgba(255,255,255,0.08);
+      --purple: #8b5cf6;
+      --purple-light: #c4b5fd;
+      --teal: #14b8a6;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --text: #e2e8f0;
+      --muted: rgba(255,255,255,0.45);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .widget {
+      width: 100%;
+      max-width: 460px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.1);
+    }
+
+    /* ── Header ── */
+    .w-header {
+      background: linear-gradient(135deg, #1a1040 0%, #111520 100%);
+      padding: 20px 22px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .w-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .w-brand-dot {
+      width: 8px; height: 8px;
+      background: var(--purple);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--purple);
+    }
+    .w-brand-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--purple-light);
+    }
+    .w-item-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .w-item-dims {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+    .w-price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--purple-light);
+      margin-top: 8px;
+    }
+
+    /* ── Room Input ── */
+    .w-section {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .w-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: block;
+    }
+    .w-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .w-input-group label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .w-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 10px 12px;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .w-input:focus {
+      outline: none;
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+    }
+    .w-unit-toggle {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .unit-btn {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .unit-btn.active {
+      background: rgba(139,92,246,0.2);
+      border-color: var(--purple);
+      color: var(--purple-light);
+    }
+
+    /* ── Check Button ── */
+    .w-check-btn {
+      display: block;
+      width: calc(100% - 44px);
+      margin: 0 22px 18px;
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 14px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(139,92,246,0.35);
+    }
+    .w-check-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(139,92,246,0.5); }
+    .w-check-btn:active { transform: translateY(0); }
+    .w-check-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+    /* ── Result ── */
+    .w-result {
+      padding: 18px 22px;
+      border-top: 1px solid var(--border);
+      display: none;
+      animation: fadeUp 0.3s ease;
+    }
+    .w-result.visible { display: block; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .result-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .result-icon.fits { background: rgba(34,197,94,0.15); }
+    .result-icon.tight { background: rgba(245,158,11,0.15); }
+    .result-icon.nope { background: rgba(239,68,68,0.12); }
+
+    .result-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .result-sub { font-size: 0.78rem; color: var(--muted); }
+    .result-sub.fits-color { color: #86efac; }
+    .result-sub.tight-color { color: #fcd34d; }
+    .result-sub.nope-color { color: #fca5a5; }
+
+    .result-bars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .r-bar {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .r-bar-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; }
+    .r-bar-value { font-size: 0.95rem; font-weight: 700; }
+    .r-bar-value.green { color: var(--green); }
+    .r-bar-value.amber { color: var(--amber); }
+    .r-bar-value.red { color: var(--red); }
+    .r-bar-sub { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+    .w-tip {
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .w-tip strong { color: rgba(255,255,255,0.6); }
+
+    .w-cta {
+      width: 100%;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 10px;
+      color: #86efac;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .w-cta:hover { background: rgba(34,197,94,0.2); }
+
+    /* ── Footer ── */
+    .w-footer {
+      padding: 12px 22px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.2);
+    }
+    .w-footer a { color: var(--purple-light); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="widget" id="sw-widget">
+
+  <!-- Header: Item info -->
+  <div class="w-header">
+    <div class="w-brand">
+      <div class="w-brand-dot"></div>
+      <span class="w-brand-name">Space Weaver · Will It Fit?</span>
+    </div>
+    <div class="w-item-name" id="item-name">Milano 3-Seater Sofa</div>
+    <div class="w-item-dims" id="item-dims">6.5ft × 3ft &nbsp;|&nbsp; 198cm × 91cm</div>
+    <div class="w-price" id="item-price">₹49,999</div>
+  </div>
+
+  <!-- Room size input -->
+  <div class="w-section">
+    <span class="w-label">Your Room Dimensions</span>
+    <div class="w-inputs">
+      <div class="w-input-group">
+        <label for="room-w">Width</label>
+        <input id="room-w" class="w-input" type="number" placeholder="e.g. 12" min="6" max="50" step="0.5">
+      </div>
+      <div class="w-input-group">
+        <label for="room-l">Length</label>
+        <input id="room-l" class="w-input" type="number" placeholder="e.g. 15" min="6" max="50" step="0.5">
+      </div>
+    </div>
+    <div class="w-unit-toggle">
+      <button class="unit-btn active" data-unit="ft" onclick="setUnit('ft')">Feet</button>
+      <button class="unit-btn" data-unit="m" onclick="setUnit('m')">Metres</button>
+      <button class="unit-btn" data-unit="cm" onclick="setUnit('cm')">Centimetres</button>
+    </div>
+  </div>
+
+  <!-- Check button -->
+  <button class="w-check-btn" id="check-btn" onclick="checkFit()">
+    Check If It Fits →
+  </button>
+
+  <!-- Result panel -->
+  <div class="w-result" id="result-panel">
+    <div class="result-status">
+      <div class="result-icon" id="r-icon">✅</div>
+      <div>
+        <div class="result-label" id="r-label">It Fits Comfortably!</div>
+        <div class="result-sub" id="r-sub"></div>
+      </div>
+    </div>
+
+    <div class="result-bars">
+      <div class="r-bar">
+        <div class="r-bar-label">Width gap</div>
+        <div class="r-bar-value" id="r-gap-w">—</div>
+        <div class="r-bar-sub">after item placed</div>
+      </div>
+      <div class="r-bar">
+        <div class="r-bar-label">Length gap</div>
+        <div class="r-bar-value" id="r-gap-l">—</div>
+        <div class="r-bar-sub">after item placed</div>
+      </div>
+      <div class="r-bar">
+        <div class="r-bar-label">Walkway left</div>
+        <div class="r-bar-value" id="r-walk">—</div>
+        <div class="r-bar-sub">min 2.5ft needed</div>
+      </div>
+      <div class="r-bar">
+        <div class="r-bar-label">Room coverage</div>
+        <div class="r-bar-value" id="r-cover">—</div>
+        <div class="r-bar-sub">item vs room area</div>
+      </div>
+    </div>
+
+    <div class="w-tip" id="r-tip"></div>
+    <button class="w-cta" id="r-cta" onclick="window.open('https://spaceweaver.in?ref=widget','_blank')">
+      Design your full room layout free →
+    </button>
+  </div>
+
+  <div class="w-footer">
+    Fit check by <a href="https://spaceweaver.in" target="_blank">Space Weaver</a> · Free spatial intelligence
+  </div>
+
+</div>
+
+<script>
+  // ── Config (sellers: replace these values) ──────────────────────────────
+  const ITEM = {
+    name:     'Milano 3-Seater Sofa',
+    type:     'sofa',
+    widthFt:  6.5,
+    depthFt:  3.0,
+    widthCm:  198,
+    depthCm:  91,
+    price:    '₹49,999',
+    notes:    'Keep 18 inches from wall for cleaning access. Pairs well with a 3.5ft coffee table.',
+  };
+
+  // Min walkway standard: 2.5ft (30 inches) on each side
+  const MIN_WALKWAY_FT = 2.5;
+
+  // ── Unit conversion state ───────────────────────────────────────────────
+  let currentUnit = 'ft';
+
+  function setUnit(unit) {
+    currentUnit = unit;
+    document.querySelectorAll('.unit-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.unit === unit);
+    });
+    // Clear inputs when unit changes
+    document.getElementById('room-w').value = '';
+    document.getElementById('room-l').value = '';
+    document.getElementById('room-w').placeholder = unit === 'ft' ? 'e.g. 12' : unit === 'm' ? 'e.g. 3.6' : 'e.g. 365';
+    document.getElementById('room-l').placeholder = unit === 'ft' ? 'e.g. 15' : unit === 'm' ? 'e.g. 4.5' : 'e.g. 457';
+  }
+
+  function toFt(val, unit) {
+    if (unit === 'm')  return val * 3.28084;
+    if (unit === 'cm') return val / 30.48;
+    return val;
+  }
+
+  // ── Populate header from config ─────────────────────────────────────────
+  document.getElementById('item-name').textContent  = ITEM.name;
+  document.getElementById('item-dims').innerHTML    =
+    `${ITEM.widthFt}ft × ${ITEM.depthFt}ft &nbsp;|&nbsp; ${ITEM.widthCm}cm × ${ITEM.depthCm}cm`;
+  document.getElementById('item-price').textContent = ITEM.price;
+
+  // ── Main fit check function ─────────────────────────────────────────────
+  function checkFit() {
+    const rawW = parseFloat(document.getElementById('room-w').value);
+    const rawL = parseFloat(document.getElementById('room-l').value);
+
+    if (!rawW || !rawL || rawW <= 0 || rawL <= 0) {
+      document.getElementById('room-w').style.borderColor = '#ef4444';
+      document.getElementById('room-l').style.borderColor = '#ef4444';
+      setTimeout(() => {
+        document.getElementById('room-w').style.borderColor = '';
+        document.getElementById('room-l').style.borderColor = '';
+      }, 1500);
+      return;
+    }
+
+    // Convert to ft
+    const roomW = toFt(rawW, currentUnit);
+    const roomL = toFt(rawL, currentUnit);
+
+    // Core calculations
+    const gapW  = roomW - ITEM.widthFt;
+    const gapL  = roomL - ITEM.depthFt;
+    const minGap = MIN_WALKWAY_FT * 2;          // 5ft total (both sides)
+    const fitsW = gapW >= minGap;
+    const fitsL = gapL >= minGap;
+    const fits  = fitsW && fitsL;
+    const tight = !fits && gapW >= 0 && gapL >= 0;
+    const nofit = gapW < 0 || gapL < 0;
+
+    const coverage = ((ITEM.widthFt * ITEM.depthFt) / (roomW * roomL) * 100).toFixed(0);
+    const walkway  = Math.min(gapW, gapL).toFixed(1);
+
+    // ── Status badge ──────────────────────────────────────────────────────
+    const icon  = document.getElementById('r-icon');
+    const label = document.getElementById('r-label');
+    const sub   = document.getElementById('r-sub');
+
+    if (nofit) {
+      icon.textContent  = '❌'; icon.className = 'result-icon nope';
+      label.textContent = 'Does Not Fit';
+      sub.textContent   = 'The item is wider or deeper than your room.';
+      sub.className = 'result-sub nope-color';
+    } else if (!fits) {
+      icon.textContent  = '⚠️'; icon.className = 'result-icon tight';
+      label.textContent = 'Fits — But Very Tight';
+      sub.textContent   = 'Less than 2.5ft walkway on one side.';
+      sub.className = 'result-sub tight-color';
+    } else {
+      icon.textContent  = '✅'; icon.className = 'result-icon fits';
+      label.textContent = 'Fits Comfortably!';
+      sub.textContent   = `${walkway}ft clearance on tightest side.`;
+      sub.className = 'result-sub fits-color';
+    }
+
+    // ── Measurement bars ──────────────────────────────────────────────────
+    function colorClass(val, good, warn) {
+      return val >= good ? 'green' : val >= warn ? 'amber' : 'red';
+    }
+    const gWEl = document.getElementById('r-gap-w');
+    gWEl.textContent = gapW >= 0 ? gapW.toFixed(1) + 'ft' : gapW.toFixed(1) + 'ft ⚠️';
+    gWEl.className = 'r-bar-value ' + colorClass(gapW, minGap, 1.5);
+
+    const gLEl = document.getElementById('r-gap-l');
+    gLEl.textContent = gapL >= 0 ? gapL.toFixed(1) + 'ft' : gapL.toFixed(1) + 'ft ⚠️';
+    gLEl.className = 'r-bar-value ' + colorClass(gapL, minGap, 1.5);
+
+    const wEl = document.getElementById('r-walk');
+    const minW = Math.min(gapW / 2, gapL / 2);
+    wEl.textContent = minW.toFixed(1) + 'ft';
+    wEl.className = 'r-bar-value ' + colorClass(minW, MIN_WALKWAY_FT, 1.5);
+
+    const cEl = document.getElementById('r-cover');
+    cEl.textContent = coverage + '%';
+    cEl.className = 'r-bar-value ' + colorClass(100 - parseInt(coverage), 60, 40);
+
+    // ── Tip ───────────────────────────────────────────────────────────────
+    const tip = document.getElementById('r-tip');
+    if (nofit) {
+      tip.innerHTML = `<strong>Too large for this room.</strong> Consider our ${ITEM.type === 'sofa' ? '2-seater sofa (5ft × 2.5ft)' : 'smaller variant'} instead, or measure your room again.`;
+    } else if (!fits) {
+      tip.innerHTML = `<strong>Tip:</strong> You could push the ${ITEM.type} flush against the wall to gain an extra ${(ITEM.depthFt / 2).toFixed(1)}ft. Or try our loveseat variant for more walkway.`;
+    } else {
+      tip.innerHTML = `<strong>Looks good!</strong> ${ITEM.notes || 'Great choice for your room size.'}`;
+    }
+
+    // ── CTA ───────────────────────────────────────────────────────────────
+    const cta = document.getElementById('r-cta');
+    if (fits) {
+      cta.textContent = '✨ Design your full room layout free →';
+    } else if (tight) {
+      cta.textContent = '🔍 Find a smaller option that fits →';
+    } else {
+      cta.textContent = '🔎 See what fits in your room →';
+    }
+
+    // Show result panel
+    document.getElementById('result-panel').classList.add('visible');
+    document.getElementById('check-btn').textContent = 'Check Again';
+  }
+
+  // Enter key triggers check
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') checkFit(); });
+</script>
+</body>
+</html>
