@@ -116,6 +116,53 @@ function overlaps(a, b, buffer = 0.5) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// STRUCTURAL CONSTRAINTS: Door Swing Exclusion Zones
+//
+// Each door creates a rectangular exclusion zone = the swing arc footprint.
+// Items placed inside this zone would block the door from opening.
+// Zone = door width × DOOR_SWING_DEPTH (3ft default) extending into the room.
+// ─────────────────────────────────────────────────────────────────────────────
+const DOOR_SWING_DEPTH = 3.0; // ft — standard interior door swing radius
+
+/**
+ * Compute exclusion zones for all doors in fixedElements.
+ * Each zone is a rectangle { left, right, top, bottom } in room-space ft.
+ */
+function computeDoorExclusionZones(fixedElements = []) {
+  return (fixedElements || [])
+    .filter(el => el.type === 'door')
+    .map(door => {
+      const pos = door.position || (door.x || 0);  // position along wall
+      const halfW = (door.width || 2.5) / 2;
+      const swing = DOOR_SWING_DEPTH;
+
+      switch (door.wall) {
+        case 'top':    return { left: pos - halfW, right: pos + halfW, top: 0,             bottom: swing    };
+        case 'bottom': return { left: pos - halfW, right: pos + halfW, top: -swing + 999,  bottom: 999      };
+        case 'left':   return { left: 0,           right: swing,       top: pos - halfW,   bottom: pos + halfW + swing };
+        case 'right':  return { left: 999 - swing, right: 999,         top: pos - halfW,   bottom: pos + halfW + swing };
+        default:       return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Returns true if an item's AABB intersects any door exclusion zone.
+ * A 0.5ft margin is added so items don’t crowd the doorway.
+ */
+function isInDoorZone(item, doorZones, margin = 0.5) {
+  if (!doorZones || doorZones.length === 0) return false;
+  const aabb = getAABB(item);
+  return doorZones.some(zone =>
+    aabb.left   - margin < zone.right  &&
+    aabb.right  + margin > zone.left   &&
+    aabb.top    - margin < zone.bottom &&
+    aabb.bottom + margin > zone.top
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Place a single item at a candidate position, spiraling to find clean spot
 // ─────────────────────────────────────────────────────────────────────────────
 function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElements, roomW, roomL) {
@@ -131,30 +178,34 @@ function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElem
   });
 
   const allObstacles = [...placedSoFar, ...(fixedElements || [])];
-  const CLEAR_BUFFER = 0.7; // 0.7ft (~8 inches) between items
+  const CLEAR_BUFFER = 0.7;
+
+  // Pre-compute door exclusion zones (door swing areas — items can't go here)
+  const doorZones = computeDoorExclusionZones(fixedElements);
+
+  // An item is "clean" if it doesn't collide with anything AND isn't in a door swing zone
+  const isClean = (c) =>
+    !allObstacles.some(obs => overlaps(c, obs, CLEAR_BUFFER)) &&
+    !isInDoorZone(c, doorZones);
 
   const candidate = { ...item, rotation: rot, ...clamp(targetX, targetY) };
+  if (isClean(candidate)) return candidate;
 
-  if (!allObstacles.some(obs => overlaps(candidate, obs, CLEAR_BUFFER))) {
-    return candidate;
-  }
-
-  // Spiral outward to find clean position
+  // Spiral outward to find a clean position respecting all constraints
   for (let r = 0.4; r <= Math.max(roomW, roomL); r += 0.35) {
     const steps = Math.max(10, Math.round((2 * Math.PI * r) / 0.4));
     for (let step = 0; step < steps; step++) {
       const angle = (step / steps) * 2 * Math.PI;
       const { x, y } = clamp(targetX + Math.cos(angle) * r, targetY + Math.sin(angle) * r);
       const cand = { ...candidate, x, y };
-      if (!allObstacles.some(obs => overlaps(cand, obs, CLEAR_BUFFER))) {
-        return cand;
-      }
+      if (isClean(cand)) return cand;
     }
   }
 
-  // Couldn't place without overlap — return best-effort clamped position
+  // Couldn't satisfy all constraints — return best-effort position (flagged)
   return { ...candidate, ...clamp(targetX, targetY), _overflow: true };
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CANDIDATE GENERATION
