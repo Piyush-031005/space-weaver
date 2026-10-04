@@ -49,6 +49,7 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
   const [vibe, setVibe] = useState<string>("cozy");
   const [budget, setBudget] = useState<string>("budget");
   const [unit, setUnit] = useState<string>("ft");
+  const [prompt, setPrompt] = useState<string>("");  // NLP intent prompt
   const [error, setError] = useState<string | null>(null);
   
   // Custom items list instead of simple counts
@@ -152,7 +153,8 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
       ),
       vibe: vibe,
       budget: budget,
-      unit: unit
+      unit: unit,
+      prompt: prompt.trim() || undefined,  // pass NLP prompt to intent parser
     };
 
     setPendingPayload(payload);
@@ -466,6 +468,45 @@ const RoomBuilder: React.FC<RoomBuilderProps> = ({ isOpen, onClose, onGenerate, 
                       <p className="text-xs text-muted-foreground">{v.desc}</p>
                     </div>
                   ))}
+                </div>
+              </section>
+
+              {/* Step 6: Natural Language Prompt (Intent Layer) */}
+              <section className="px-6 py-5 border-b border-border/30">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-accent mb-3">6. Describe Your Space (Optional)</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Tell us how you live. Our AI adjusts the 12 layouts to match your lifestyle.
+                </p>
+                <textarea
+                  id="intent-prompt"
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  placeholder={`e.g. "Small room, I work from home at night and want a cozy corner for reading"
+e.g. "Large drawing room for family gatherings, vastu-compliant"
+e.g. "Tiny 1BHK, need space for yoga, minimal furniture"`}
+                  rows={3}
+                  maxLength={300}
+                  className="w-full bg-background/60 border border-border/50 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                />
+                <div className="flex justify-between items-center mt-1.5">
+                  <span className="text-[10px] text-muted-foreground/50">
+                    {prompt.length > 0 && (
+                      <>
+                        ✨ We detected: {[
+                          prompt.toLowerCase().match(/small|tiny|1\s*bhk|compact|studio/) ? '📐 Small room' : null,
+                          prompt.toLowerCase().match(/work|study|laptop|desk|wfh/) ? '💻 Work/study' : null,
+                          prompt.toLowerCase().match(/cozy|warm|snug|comfort/) ? '🛋️ Cozy vibe' : null,
+                          prompt.toLowerCase().match(/minimal|clean|simple|sparse/) ? '🪟 Minimal style' : null,
+                          prompt.toLowerCase().match(/family|kids|children|elderly/) ? '👨‍👩‍👧 Family use' : null,
+                          prompt.toLowerCase().match(/vastu|feng|spiritual|pooja/) ? '🪔 Vastu/Feng Shui' : null,
+                          prompt.toLowerCase().match(/movie|cinema|netflix|tv/) ? '🎬 Cinema setup' : null,
+                          prompt.toLowerCase().match(/large|big|spacious|3\s*bhk|villa/) ? '🏠 Large room' : null,
+                          prompt.toLowerCase().match(/night|evening|dark|lamp/) ? '🌙 Night use' : null,
+                        ].filter(Boolean).join(', ') || 'type more to see signals'}
+                      </>
+                    )}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/40">{prompt.length}/300</span>
                 </div>
               </section>
             </div>

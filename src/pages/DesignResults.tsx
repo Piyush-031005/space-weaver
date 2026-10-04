@@ -11,6 +11,7 @@ import html2canvas from "html2canvas";
 import { ArrowLeft, RefreshCw, Check, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { usePreferenceStore } from "@/hooks/usePreferenceStore";
 
 // Premium minimal loader — no AI branding, no CPU icons, no HSRE stage text
 const GeneratingLoader = ({ active }: { active: boolean }) => {
@@ -53,11 +54,24 @@ const DesignResults = () => {
   // Session ID for user preference logging (persisted per page load)
   const sessionId = React.useRef(`sess_${Date.now()}_${Math.random().toString(36).slice(2)}`).current;
 
-  // Log user's layout choice for future ML training
+  // Preference learning — personalises gallery order based on past choices
+  const { logChoice, getPreferredOrder, getPersonalisationNote } = usePreferenceStore();
+
+  // Reorder options by user's historical preference (most-chosen philosophy first)
+  const orderedOptions = React.useMemo(
+    () => getPreferredOrder(currentData?.options || []),
+    [currentData?.options, getPreferredOrder]
+  );
+
+  const personalisationNote = getPersonalisationNote();
+
+  // Log user's layout choice — server + local preference store
   const handleLayoutSelect = (idx: number) => {
     setActiveOptionIndex(idx);
-    const chosen = currentData?.options?.[idx];
+    const chosen = orderedOptions?.[idx];
     if (!chosen) return;
+
+    // 1. Log to server for global ML training data
     fetch('/api/log-choice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,7 +81,16 @@ const DesignResults = () => {
         roomWidth: payloadToUse?.room?.width,
         roomLength: payloadToUse?.room?.length,
       }),
-    }).catch(() => {}); // non-blocking, never crash UI
+    }).catch(() => {}); // non-blocking
+
+    // 2. Log to local preference store (personalises gallery on next visit)
+    logChoice(
+      chosen.id,
+      payloadToUse?.room?.width || 0,
+      payloadToUse?.room?.length || 0,
+      payloadToUse?.vibe,
+      payloadToUse?.prompt,
+    );
   };
 
   useEffect(() => {
@@ -302,8 +325,17 @@ const DesignResults = () => {
 
       {/* Layout Gallery */}
       <div className="flex-1 pb-12">
-        <LayoutGallery 
-          options={currentData.options} 
+        {/* Personalisation note — shown when user has 3+ previous choices */}
+        {personalisationNote && (
+          <div className="mx-auto max-w-6xl px-4 mb-4">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/8 border border-primary/15 text-xs text-primary/80">
+              <span className="text-base">✨</span>
+              <span>{personalisationNote}</span>
+            </div>
+          </div>
+        )}
+        <LayoutGallery
+          options={orderedOptions}
           activeIndex={activeOptionIndex}
           onSelect={handleLayoutSelect}
           onOpen3D={(idx) => {
@@ -314,7 +346,7 @@ const DesignResults = () => {
           unit={payloadToUse?.unit}
           furniture={payloadToUse?.furniture || []}
         />
-        
+
         {activeOption && (
           <SpaceDNA 
             spaceData={activeOption} 
