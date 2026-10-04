@@ -14,6 +14,7 @@ import { calculateCirculationPaths } from '../engines/geometry/circulation.js';
 import { generateAllPhilosophies } from '../engines/optimization/philosophyEngine.js';
 import { generateLayoutReasoning } from '../engines/explainability/reasoning.js';
 import { parseIntent } from '../engines/intent/intentParser.js';
+import { examHallHandler } from '../engines/b2b/examHallEngine.js';
 
 import fs from 'fs';
 import path from 'path';
@@ -362,5 +363,15 @@ router.post('/generate-space-genome', (req, res) => {
   const genome = generateGenome(clearanceScores);
   res.json({ genome });
 });
+
+/**
+ * POST /api/exam-hall
+ * Body: { room: { width, length }, options?: { ... } }
+ *
+ * B2B vertical: generate compliant exam hall seating.
+ * Enforces CBSE/UGC norms — 1m desk spacing, 3ft aisles, 5ft board clearance.
+ * Returns: { desks[], capacity, rowCount, colCount, density, compliance, invigilatorPaths }
+ */
+router.post('/exam-hall', examHallHandler);
 
 export default router;
