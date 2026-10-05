@@ -15,6 +15,7 @@ import { generateAllPhilosophies } from '../engines/optimization/philosophyEngin
 import { generateLayoutReasoning } from '../engines/explainability/reasoning.js';
 import { parseIntent } from '../engines/intent/intentParser.js';
 import { examHallHandler } from '../engines/b2b/examHallEngine.js';
+import { parkingHallHandler } from '../engines/b2b/parkingLotEngine.js';
 
 import fs from 'fs';
 import path from 'path';
@@ -373,5 +374,14 @@ router.post('/generate-space-genome', (req, res) => {
  * Returns: { desks[], capacity, rowCount, colCount, density, compliance, invigilatorPaths }
  */
 router.post('/exam-hall', examHallHandler);
+
+/**
+ * POST /api/parking-lot
+ * Body: { plot: { width, length } }
+ *
+ * B2B vertical: generate commercial parking layout (NBC India 2016 norms).
+ * Returns: { capacity, spots[], driveways[], compliance }
+ */
+router.post('/parking-lot', parkingHallHandler);
 
 export default router;

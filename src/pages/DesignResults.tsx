@@ -263,6 +263,30 @@ const DesignResults = () => {
               </div>
             </div>
 
+            {/* AI Intent Explanation (Shows if user provided a prompt) */}
+            {currentData?.intent?.explanation && (
+              <div className="mb-8 p-5 bg-primary/5 border border-primary/20 rounded-2xl">
+                <div className="flex items-start gap-3">
+                  <div className="text-xl mt-0.5">✨</div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Your Space, Understood</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {currentData.intent.explanation}
+                    </p>
+                    {currentData.intent.signals?.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {currentData.intent.signals.map((s: string) => (
+                          <span key={s} className="px-2 py-1 bg-background border border-border rounded-md text-[10px] font-mono text-muted-foreground uppercase">
+                            {s.split(':')[1]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
               {/* Architectural Sightline Strategy */}
               <div className="lg:col-span-6 space-y-4">
