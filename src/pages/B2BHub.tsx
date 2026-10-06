@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import B2BVisualizer from "@/components/B2BVisualizer";
 
 export default function B2BHub() {
   const navigate = useNavigate();
@@ -168,6 +169,8 @@ export default function B2BHub() {
                     </div>
                   </div>
 
+                  <B2BVisualizer type="exam" data={examResult} widthFt={examRoomW} lengthFt={examRoomL} />
+
                   <div className="mt-8">
                     <h4 className="font-semibold mb-3">Compliance Report</h4>
                     <div className="space-y-2">
@@ -212,6 +215,8 @@ export default function B2BHub() {
                       <div className="text-[10px] text-muted-foreground uppercase">Efficiency / Car</div>
                     </div>
                   </div>
+
+                  <B2BVisualizer type="parking" data={parkResult} widthFt={parkRoomW} lengthFt={parkRoomL} />
 
                   <div className="mt-8">
                     <h4 className="font-semibold mb-3">NBC 2016 Compliance</h4>
