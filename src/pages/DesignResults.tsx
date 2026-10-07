@@ -59,7 +59,7 @@ const DesignResults = () => {
 
   // Reorder options by user's historical preference (most-chosen philosophy first)
   const orderedOptions = React.useMemo(
-    () => getPreferredOrder(currentData?.options || []),
+    () => getPreferredOrder<any>(currentData?.options || []),
     [currentData?.options, getPreferredOrder]
   );
 
