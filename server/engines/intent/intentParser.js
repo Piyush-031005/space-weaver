@@ -16,6 +16,8 @@
  * NO EXTERNAL API CALLS. This runs in <1ms on-device.
  */
 
+import { GoogleGenAI } from '@google/genai';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // KEYWORD → SIGNAL MAPS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,17 +85,17 @@ const SIGNAL_TO_PHILOSOPHY = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN: parseIntent(prompt) → { philosophyId, weightOverrides, signals, explanation }
+// MAIN: parseIntentRuleBased(prompt) → { philosophyId, weightOverrides, signals, explanation }
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Parse a freeform user prompt into structured intent.
+ * Parse a freeform user prompt into structured intent using fast rules.
  *
  * @param {string} prompt — e.g. "small room, I study at night, want cozy vibes"
  * @param {string} baseVibe — vibe already selected in the UI (fallback if no vibe detected)
  * @returns {{ philosophyId: string, weightOverrides: object, signals: string[], explanation: string }}
  */
-export function parseIntent(prompt = '', baseVibe = 'cozy') {
+export function parseIntentRuleBased(prompt = '', baseVibe = 'cozy') {
   const lower = prompt.toLowerCase().trim();
   const detectedSignals = new Set();
 
@@ -178,6 +180,53 @@ export function parseIntent(prompt = '', baseVibe = 'cozy') {
     explanation,
     rawPrompt: prompt,
   };
+}
+
+/**
+ * Parse intent using Gemini LLM if API key is available, else fallback to rules.
+ */
+export async function parseIntent(prompt = '', baseVibe = 'cozy') {
+  if (!process.env.GEMINI_API_KEY) {
+    console.log("No GEMINI_API_KEY found. Falling back to rule-based intent parsing.");
+    return parseIntentRuleBased(prompt, baseVibe);
+  }
+
+  try {
+    const ai = new GoogleGenAI();
+    const systemPrompt = `You are the AI Intent Engine for Space Weaver.
+The user provides a description of their room, lifestyle, and needs.
+Map their intent to spatial layout weight overrides.
+
+Available philosophies (fallback to philosophy-\${baseVibe}):
+philosophy-cozy, philosophy-minimalist, philosophy-grand, philosophy-architect, philosophy-sunset, philosophy-fengshui, philosophy-executive, philosophy-entertainer, philosophy-cinema, philosophy-family
+
+Weights to adjust (-0.2 to +0.2 max):
+walkway, focal, light, balance, wallAdj, doorClear
+
+Output EXACTLY JSON matching this schema:
+{
+  "philosophyId": "philosophy-id",
+  "weightOverrides": { "walkway": 0.05, "focal": -0.05 },
+  "signals": ["size:small", "usage:work", "vibe:cozy", "time:night"],
+  "explanation": "Based on your description: prioritising desk focus and evening lighting."
+}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: 'application/json',
+      }
+    });
+
+    const parsed = JSON.parse(response.text());
+    parsed.rawPrompt = prompt;
+    return parsed;
+  } catch (error) {
+    console.error("LLM Intent parsing failed. Falling back to rules.", error.message);
+    return parseIntentRuleBased(prompt, baseVibe);
+  }
 }
 
 /**
