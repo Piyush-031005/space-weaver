@@ -121,7 +121,7 @@ export const PHILOSOPHY_DEFINITIONS = [
  */
 export function generateAllPhilosophies(room, furniture, fixedElements, focalPoint) {
   // Generate a single shared candidate pool (all philosophies score from the same set)
-  const sharedCandidates = generateCandidates(room, furniture, fixedElements, focalPoint, 400);
+  const sharedCandidates = generateCandidates(room, furniture, fixedElements, focalPoint, 200);
 
   return PHILOSOPHY_DEFINITIONS.map(def => {
     const result = generateScoredLayout(

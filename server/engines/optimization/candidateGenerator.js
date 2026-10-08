@@ -89,13 +89,15 @@ const VALID_ROTATIONS_BY_TYPE = {
 function getAABB(item) {
   const rot = item.rotation || 0;
   const isSwapped = Math.abs(Math.sin(rot)) > 0.5;
-  const w = isSwapped ? item.depth : item.width;
-  const d = isSwapped ? item.width : item.depth;
+  const baseW = item.width || 0;
+  const baseD = item.depth || 0;
+  const w = isSwapped ? baseD : baseW;
+  const d = isSwapped ? baseW : baseD;
   return {
-    left: item.x - w / 2,
-    right: item.x + w / 2,
-    top: item.y - d / 2,
-    bottom: item.y + d / 2,
+    left: (item.x || 0) - w / 2,
+    right: (item.x || 0) + w / 2,
+    top: (item.y || 0) - d / 2,
+    bottom: (item.y || 0) + d / 2,
     w,
     d
   };
@@ -165,7 +167,7 @@ function isInDoorZone(item, doorZones, margin = 0.5) {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Place a single item at a candidate position, spiraling to find clean spot
 // ─────────────────────────────────────────────────────────────────────────────
-function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElements, roomW, roomL) {
+function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElements, roomW, roomL, buffer = 0.7) {
   const rot = rotation;
   const isSwapped = Math.abs(Math.sin(rot)) > 0.5;
   const w = isSwapped ? item.depth : item.width;
@@ -178,20 +180,16 @@ function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElem
   });
 
   const allObstacles = [...placedSoFar, ...(fixedElements || [])];
-  const CLEAR_BUFFER = 0.7;
 
-  // Pre-compute door exclusion zones (door swing areas — items can't go here)
   const doorZones = computeDoorExclusionZones(fixedElements);
 
-  // An item is "clean" if it doesn't collide with anything AND isn't in a door swing zone
   const isClean = (c) =>
-    !allObstacles.some(obs => overlaps(c, obs, CLEAR_BUFFER)) &&
+    !allObstacles.some(obs => overlaps(c, obs, buffer)) &&
     !isInDoorZone(c, doorZones);
 
   const candidate = { ...item, rotation: rot, ...clamp(targetX, targetY) };
   if (isClean(candidate)) return candidate;
 
-  // Spiral outward to find a clean position respecting all constraints
   for (let r = 0.4; r <= Math.max(roomW, roomL); r += 0.35) {
     const steps = Math.max(10, Math.round((2 * Math.PI * r) / 0.4));
     for (let step = 0; step < steps; step++) {
@@ -202,7 +200,11 @@ function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElem
     }
   }
 
-  // Couldn't satisfy all constraints — return best-effort position (flagged)
+  // If we couldn't find a spot with this buffer, and the buffer is large, try with a smaller one
+  if (buffer > 0.2) {
+    return placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElements, roomW, roomL, 0.1);
+  }
+
   return { ...candidate, ...clamp(targetX, targetY), _overflow: true };
 }
 
@@ -211,28 +213,28 @@ function placeItemClean(item, targetX, targetY, rotation, placedSoFar, fixedElem
 // CANDIDATE GENERATION
 // Generates N random valid layouts for a given furniture list + room
 // ─────────────────────────────────────────────────────────────────────────────
-function generateCandidates(room, furniture, fixedElements, focalPoint, count = 350) {
+function generateCandidates(room, furniture, fixedElements, focalPoint, count = 200) {
   const roomW = room.width || 15;
   const roomL = room.length || 20;
   const candidates = [];
 
-  // Identify structural constraints
   const doors = (fixedElements || []).filter(e => e.type === 'door');
   const windows = (fixedElements || []).filter(e => e.type === 'window');
 
-  // Pre-compute focal point (TV wall / focal element position)
   const focal = focalPoint || { x: roomW / 2, y: 1.0 };
 
-  // Split candidates into 4 spatial zones to guarantee diversity across philosophies
-  // Zone 0: seating in top half | Zone 1: seating in bottom half
-  // Zone 2: seating left-biased | Zone 3: seating right-biased
-  // Using 200 candidates (50 per zone) — faster than 400, still enough diversity
-  const TOTAL = 200;
+  const TOTAL = count;
   const zoneSize = Math.floor(TOTAL / 4);
 
-  for (let attempt = 0; attempt < TOTAL; attempt++) {
+  let validCandidates = 0;
+  let attempts = 0;
+  const MAX_ATTEMPTS = TOTAL * 10;
+
+  while (validCandidates < TOTAL && attempts < MAX_ATTEMPTS) {
+    attempts++;
     const placed = [];
-    const zone = Math.floor(attempt / zoneSize); // 0,1,2,3
+    const zone = Math.floor(validCandidates / zoneSize) % 4;
+    let overflowed = false;
 
     for (const item of furniture) {
       const typeKey = (item.type || 'default').toLowerCase().replace(/ /g, '_');
@@ -242,7 +244,6 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
       let tx, ty;
 
       if (WALL_TYPES.has(typeKey)) {
-        // Wall-adjacent items: place them near a wall
         const wall = Math.floor(Math.random() * 4);
         const isSwapped = Math.abs(Math.sin(rot)) > 0.5;
         const d = isSwapped ? item.width : item.depth;
@@ -251,27 +252,20 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
         else if (wall === 2) { tx = roomW * (0.1 + Math.random() * 0.8); ty = roomL - d / 2 - 0.4 - Math.random() * 0.5; }
         else { tx = d / 2 + 0.4 + Math.random() * 0.5; ty = roomL * (0.1 + Math.random() * 0.8); }
       } else if (FOCAL_FACING_TYPES.has(typeKey)) {
-        // Seating: zone-biased placement for guaranteed diversity
-        // Zones are spread across the FULL room depth (not just 20-55%)
         if (zone === 0) {
-          // Close seating (20-40% down): near focal/TV
           tx = roomW * (0.10 + Math.random() * 0.80);
           ty = roomL * (0.20 + Math.random() * 0.20);
         } else if (zone === 1) {
-          // Far seating (65-90% down): against back wall
           tx = roomW * (0.10 + Math.random() * 0.80);
           ty = roomL * (0.65 + Math.random() * 0.25);
         } else if (zone === 2) {
-          // Left-zone seating: hug left third
           tx = roomW * (0.05 + Math.random() * 0.25);
           ty = roomL * (0.20 + Math.random() * 0.60);
         } else {
-          // Right-zone seating: hug right third
           tx = roomW * (0.70 + Math.random() * 0.25);
           ty = roomL * (0.20 + Math.random() * 0.60);
         }
       } else if (CENTER_FLOAT_TYPES.has(typeKey)) {
-        // Tables: float in middle third of room
         tx = roomW * (0.20 + Math.random() * 0.60);
         ty = roomL * (0.25 + Math.random() * 0.50);
       } else {
@@ -280,10 +274,17 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
       }
 
       const placedItem = placeItemClean(item, tx, ty, rot, placed, fixedElements, roomW, roomL);
+      if (placedItem._overflow) {
+        overflowed = true;
+        break;
+      }
       placed.push(placedItem);
     }
 
-    candidates.push(placed);
+    if (!overflowed) {
+      candidates.push(placed);
+      validCandidates++;
+    }
   }
 
   return candidates;
