@@ -24,13 +24,24 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure data directory exists for logging
 const DATA_DIR = path.join(__dirname, '../data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const LOG_FILE = path.join(DATA_DIR, 'layout_log.jsonl');
+
+try {
+  if (!process.env.VERCEL && !fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn("Could not create data directory (likely read-only filesystem). File logging disabled.");
+}
 
 /** Append one JSON line to the layout log (non-blocking) */
 function logLayoutEvent(event) {
+  if (process.env.VERCEL) {
+    // On Vercel, just log to stdout so it appears in the Vercel logs, as the filesystem is read-only.
+    console.log("[LAYOUT_EVENT]", JSON.stringify(event));
+    return;
+  }
   try {
     fs.appendFileSync(LOG_FILE, JSON.stringify(event) + '\n');
   } catch (e) {
