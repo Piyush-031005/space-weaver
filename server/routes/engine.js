@@ -223,9 +223,6 @@ router.post('/log-choice', (req, res) => {
  * Returns the full furniture catalog with dimensions and prices.
  * Used by the frontend to populate the furniture picker and shopping list.
  */
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
 router.get('/catalog', (req, res) => {
   try {
     const catalogPath = path.join(__dirname, '../data/furniture_catalog.json');
