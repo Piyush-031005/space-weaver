@@ -228,7 +228,7 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
 
   let validCandidates = 0;
   let attempts = 0;
-  const MAX_ATTEMPTS = TOTAL * 10;
+  const MAX_ATTEMPTS = TOTAL * 3;
 
   while (validCandidates < TOTAL && attempts < MAX_ATTEMPTS) {
     attempts++;
@@ -302,7 +302,7 @@ function scoreWalkway(layout, room, fixedElements) {
   const totalArea = roomW * roomL;
   
   // Sample a grid of points and count free cells
-  const steps = 20;
+  const steps = 10;
   let freeCount = 0;
   for (let yi = 0; yi < steps; yi++) {
     for (let xi = 0; xi < steps; xi++) {
@@ -578,7 +578,7 @@ function generateFitWarnings(layout, room, fixedElements) {
 function refineCandidateWithSA(layout, room, fixedElements, focalPoint, weights) {
   const T0 = 1.0;
   const Tf = 0.01;
-  const ITERATIONS = 150;
+  const ITERATIONS = 50;
   const CLEAR_BUFFER = 0.7;
   const WALL_PAD = 0.6;
 
