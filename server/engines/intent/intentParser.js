@@ -183,13 +183,36 @@ export function parseIntentRuleBased(prompt = '', baseVibe = 'cozy') {
 }
 
 /**
+ * Validates the LLM JSON output against our expected intent schema.
+ */
+function validateIntentSchema(parsed) {
+  if (typeof parsed !== 'object' || parsed === null) return false;
+  if (typeof parsed.philosophyId !== 'string') return false;
+  if (typeof parsed.weightOverrides !== 'object' || parsed.weightOverrides === null) return false;
+  if (!Array.isArray(parsed.signals)) return false;
+  if (typeof parsed.explanation !== 'string') return false;
+  return true;
+}
+
+// Global metrics for LLM performance
+export const LLM_METRICS = {
+  successCount: 0,
+  fallbackCount: 0,
+  avgLatencyMs: 0
+};
+
+/**
  * Parse intent using Gemini LLM if API key is available, else fallback to rules.
+ * Hardened with Timeout, Schema Validation, and Latency Logging.
  */
 export async function parseIntent(prompt = '', baseVibe = 'cozy') {
   if (!process.env.GEMINI_API_KEY) {
     console.log("No GEMINI_API_KEY found. Falling back to rule-based intent parsing.");
     return parseIntentRuleBased(prompt, baseVibe);
   }
+
+  const startTime = Date.now();
+  let usedFallback = false;
 
   try {
     const ai = new GoogleGenAI();
@@ -211,7 +234,8 @@ Output EXACTLY JSON matching this schema:
   "explanation": "Based on your description: prioritising desk focus and evening lighting."
 }`;
 
-    const response = await ai.models.generateContent({
+    // 1. Timeout implementation using Promise.race (3000ms max for intent)
+    const generatePromise = ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
@@ -220,11 +244,40 @@ Output EXACTLY JSON matching this schema:
       }
     });
 
-    const parsed = JSON.parse(response.text());
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("LLM Request Timed Out (>3000ms)")), 3000)
+    );
+
+    const response = await Promise.race([generatePromise, timeoutPromise]);
+    
+    // 2. Parse & Schema Validation
+    let parsed;
+    try {
+      parsed = JSON.parse(response.text());
+    } catch(e) {
+      throw new Error("Invalid JSON returned by LLM");
+    }
+
+    if (!validateIntentSchema(parsed)) {
+      throw new Error("LLM output failed schema validation");
+    }
+
     parsed.rawPrompt = prompt;
+    
+    // 3. Latency Logging & Success Metrics
+    const latency = Date.now() - startTime;
+    LLM_METRICS.successCount++;
+    LLM_METRICS.avgLatencyMs = ((LLM_METRICS.avgLatencyMs * (LLM_METRICS.successCount - 1)) + latency) / LLM_METRICS.successCount;
+    
+    console.log(`[LLM Intent] Success | Latency: ${latency}ms | Model: Gemini 2.5 Flash`);
+    
     return parsed;
+
   } catch (error) {
-    console.error("LLM Intent parsing failed. Falling back to rules.", error.message);
+    usedFallback = true;
+    LLM_METRICS.fallbackCount++;
+    const latency = Date.now() - startTime;
+    console.error(`[LLM Intent] Failed (${error.message}). Falling back to rules. | Latency: ${latency}ms`);
     return parseIntentRuleBased(prompt, baseVibe);
   }
 }
