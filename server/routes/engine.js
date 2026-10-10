@@ -19,12 +19,8 @@ import { parkingHallHandler } from '../engines/b2b/parkingLotEngine.js';
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const DATA_DIR = path.join(__dirname, '../data');
+const DATA_DIR = path.join(process.cwd(), 'server/data');
 const LOG_FILE = path.join(DATA_DIR, 'layout_log.jsonl');
 
 try {
@@ -225,7 +221,7 @@ router.post('/log-choice', (req, res) => {
  */
 router.get('/catalog', (req, res) => {
   try {
-    const catalogPath = path.join(__dirname, '../data/furniture_catalog.json');
+    const catalogPath = path.join(process.cwd(), 'server/data/furniture_catalog.json');
     const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
     const { category, type } = req.query;
     let items = catalog.items;
@@ -248,7 +244,7 @@ router.get('/catalog', (req, res) => {
 router.post('/shopping-list', (req, res) => {
   try {
     const { furniture = [], room } = req.body;
-    const catalogPath = path.join(__dirname, '../data/furniture_catalog.json');
+    const catalogPath = path.join(process.cwd(), 'server/data/furniture_catalog.json');
     const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
 
     const MIN_WALKWAY_FT = 2.5;
