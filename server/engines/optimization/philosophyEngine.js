@@ -120,8 +120,8 @@ export const PHILOSOPHY_DEFINITIONS = [
  * This is ~12x faster than generating separate pools per philosophy.
  */
 export function generateAllPhilosophies(room, furniture, fixedElements, focalPoint) {
-  // Generate a single shared candidate pool (all philosophies score from the same set)
-  const sharedCandidates = generateCandidates(room, furniture, fixedElements, focalPoint, 200);
+  // Generate a single shared candidate pool (reduced to 50 for Vercel CPU limits)
+  const sharedCandidates = generateCandidates(room, furniture, fixedElements, focalPoint, 50);
 
   return PHILOSOPHY_DEFINITIONS.map(def => {
     const result = generateScoredLayout(
