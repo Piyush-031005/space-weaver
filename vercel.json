@@ -1,15 +1,14 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
-    },
-    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ],
   "functions": {
+    "api/generate-layout.js": {
+      "maxDuration": 30
+    },
     "api/index.js": {
       "includeFiles": "server/data/**"
     }
