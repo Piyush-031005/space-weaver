@@ -16,7 +16,9 @@
  * NO EXTERNAL API CALLS. This runs in <1ms on-device.
  */
 
-import { GoogleGenAI } from '@google/genai';
+// @google/genai is imported dynamically inside parseIntent() so that
+// Vercel does not crash at module load time when the package is absent
+// or GEMINI_API_KEY is not set. Rule-based fallback handles that case.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // KEYWORD → SIGNAL MAPS
@@ -215,6 +217,7 @@ export async function parseIntent(prompt = '', baseVibe = 'cozy') {
   let usedFallback = false;
 
   try {
+    const { GoogleGenAI } = await import('@google/genai');
     const ai = new GoogleGenAI();
     const systemPrompt = `You are the AI Intent Engine for Space Weaver.
 The user provides a description of their room, lifestyle, and needs.
