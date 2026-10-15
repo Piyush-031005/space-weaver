@@ -252,18 +252,28 @@ function generateCandidates(room, furniture, fixedElements, focalPoint, count = 
         else if (wall === 2) { tx = roomW * (0.1 + Math.random() * 0.8); ty = roomL - d / 2 - 0.4 - Math.random() * 0.5; }
         else { tx = d / 2 + 0.4 + Math.random() * 0.5; ty = roomL * (0.1 + Math.random() * 0.8); }
       } else if (FOCAL_FACING_TYPES.has(typeKey)) {
-        if (zone === 0) {
-          tx = roomW * (0.10 + Math.random() * 0.80);
-          ty = roomL * (0.20 + Math.random() * 0.20);
-        } else if (zone === 1) {
-          tx = roomW * (0.10 + Math.random() * 0.80);
-          ty = roomL * (0.65 + Math.random() * 0.25);
-        } else if (zone === 2) {
-          tx = roomW * (0.05 + Math.random() * 0.25);
-          ty = roomL * (0.20 + Math.random() * 0.60);
+        const placedSofa = placed.find(p => (p.type || '').toLowerCase() === 'sofa');
+        if (placedSofa && ['chair', 'armchair', 'recliner'].includes(typeKey)) {
+          // Flank the sofa on the left or right side at 90° or 45° angle to create an L-shape / U-shape conversation group
+          const side = Math.random() < 0.5 ? -1 : 1;
+          const sofaW = placedSofa.width || 6;
+          tx = placedSofa.x + side * (sofaW / 2 + (item.width || 2.5) / 2 + 1.2 + Math.random() * 1.0);
+          ty = placedSofa.y + (Math.random() - 0.4) * 2.2;
+          rot = side === -1 ? Math.PI / 2 : -Math.PI / 2;
         } else {
-          tx = roomW * (0.70 + Math.random() * 0.25);
-          ty = roomL * (0.20 + Math.random() * 0.60);
+          if (zone === 0) {
+            tx = roomW * (0.10 + Math.random() * 0.80);
+            ty = roomL * (0.20 + Math.random() * 0.20);
+          } else if (zone === 1) {
+            tx = roomW * (0.10 + Math.random() * 0.80);
+            ty = roomL * (0.65 + Math.random() * 0.25);
+          } else if (zone === 2) {
+            tx = roomW * (0.05 + Math.random() * 0.25);
+            ty = roomL * (0.20 + Math.random() * 0.60);
+          } else {
+            tx = roomW * (0.70 + Math.random() * 0.25);
+            ty = roomL * (0.20 + Math.random() * 0.60);
+          }
         }
       } else if (CENTER_FLOAT_TYPES.has(typeKey)) {
         tx = roomW * (0.20 + Math.random() * 0.60);
@@ -343,7 +353,51 @@ function scoreFocal(layout, room, focalPoint) {
 
     totalScore += (angleScore * 0.6 + distScore * 0.4);
   }
-  return totalScore / seatItems.length;
+  const baseScore = totalScore / seatItems.length;
+
+  // SIGHTLINE & CONVERSATIONAL CORRIDOR OCCLUSION:
+  // An armchair/chair should NEVER be placed directly in front of the sofa blocking the TV/focal view
+  // or jammed within the front legroom/coffee table corridor (< 4.5ft directly forward).
+  const sofas = layout.filter(i => (i.type || '').toLowerCase() === 'sofa');
+  const chairs = layout.filter(i => ['chair', 'armchair', 'recliner'].includes((i.type || '').toLowerCase()));
+
+  let occlusionPenalty = 0;
+  for (const sofa of sofas) {
+    for (const chair of chairs) {
+      const dx = chair.x - sofa.x;
+      const dy = chair.y - sofa.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Sofa forward orientation vector
+      const sofaRot = sofa.rotation || 0;
+      const forwardX = Math.sin(sofaRot);
+      const forwardY = -Math.cos(sofaRot);
+
+      const dot = dx * forwardX + dy * forwardY; // distance in front of sofa
+      const perp = Math.abs(-forwardY * dx + forwardX * dy); // lateral distance from center axis
+
+      // Check 1: Chair jammed directly in front of sofa (< 4.8ft forward, < 2.2ft lateral)
+      if (dot > 0.8 && dot < 4.8 && perp < 2.2) {
+        occlusionPenalty += 0.40;
+      }
+
+      // Check 2: Chair directly in the sightline beam between sofa and focal point (blocking TV)
+      const sofaToFocalX = fx - sofa.x;
+      const sofaToFocalY = fy - sofa.y;
+      const sofaToFocalDist = Math.sqrt(sofaToFocalX * sofaToFocalX + sofaToFocalY * sofaToFocalY);
+      if (sofaToFocalDist > 2.0) {
+        const sightDirX = sofaToFocalX / sofaToFocalDist;
+        const sightDirY = sofaToFocalY / sofaToFocalDist;
+        const proj = dx * sightDirX + dy * sightDirY;
+        const sightPerp = Math.abs(-sightDirY * dx + sightDirX * dy);
+        if (proj > 1.2 && proj < sofaToFocalDist - 1.2 && sightPerp < 2.0) {
+          occlusionPenalty += 0.45;
+        }
+      }
+    }
+  }
+
+  return Math.max(0.05, baseScore - occlusionPenalty);
 }
 
 /** How close seating is to windows (light metric) */

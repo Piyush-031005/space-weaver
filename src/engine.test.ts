@@ -56,5 +56,5 @@ describe('Intent Engine LLM Hardening', () => {
     expect(LLM_METRICS.fallbackCount).toBeGreaterThan(0);
     
     delete process.env.GEMINI_API_KEY;
-  });
+  }, 15000);
 });

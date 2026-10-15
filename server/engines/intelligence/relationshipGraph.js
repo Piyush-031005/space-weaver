@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Relationship Graph Engine (HSRE Module)
  * Connects furniture into meaningful behavioral clusters (e.g., Conversation Zone,
  * Entertainment Axis, Dining Suite) and strictly forbids identical side-by-side seating.
@@ -227,8 +227,8 @@ export function resolveRelationshipLayout(room, furniture = [], focalPoint, mode
         { x: centerX + sofaW / 2 + 2.5, y: tableY + 2, rot: -Math.PI / 2 },
         { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: tableY, rot:  Math.PI / 2 },
         { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: tableY - 3, rot:  Math.PI / 2 },
-        { x: centerX, y: Math.max(1.8, sofa2Y - sofaD - 2.5), rot: Math.PI },
-        { x: centerX + 2.5, y: Math.max(1.8, sofa2Y - sofaD - 2.5), rot: Math.PI },
+        { x: Math.max(1.8, centerX - sofaW / 2 - 2.5), y: Math.min(roomL - 2, primarySofaY + 1.5), rot: Math.PI * 0.75 },
+        { x: Math.min(roomW - 1.8, centerX + sofaW / 2 + 2.5), y: Math.min(roomL - 2, primarySofaY + 1.5), rot: -Math.PI * 0.75 },
       ];
     }
     if (mode === "CINEMA_VIEWING_V") {
