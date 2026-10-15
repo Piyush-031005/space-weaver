@@ -427,6 +427,14 @@ const DesignResults = () => {
             setReopen3DAfterCustomizing(true);
             setIsCustomizeOpen(true);
           }}
+          onSaveLayout={(newLayout) => {
+            const newOptions = [...currentData.options];
+            newOptions[activeOptionIndex] = {
+              ...newOptions[activeOptionIndex],
+              layout: newLayout
+            };
+            setCurrentData({ ...currentData, options: newOptions });
+          }}
           activeOption={activeOption}
           room={payloadToUse?.room || { width: 20, length: 20 }}
           fixedElements={activeOption.structuralElements || payloadToUse?.structuralElements || []}

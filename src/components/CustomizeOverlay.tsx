@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Plus, Save, RotateCw, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Trash2, Sliders, ShieldAlert, Sparkles, Building2, Box } from "lucide-react";
+import { X, Plus, Save, RotateCw, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Trash2, Sliders, ShieldAlert, Sparkles, Building2, Box, ZoomIn, ZoomOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
@@ -126,6 +126,29 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
     }
   };
 
+  // Scale / Resize piece (with multiplier e.g. 1.1 for +10%, 0.9 for -10%)
+  const scaleItem = (multiplier: number) => {
+    if (activeItem) {
+      setLayout(layout.map(item => {
+        if (item.id === selectedItemId) {
+          const newW = Math.max(1.0, Math.min(rW - 1, Math.round((item.width * multiplier) * 10) / 10));
+          const newD = Math.max(0.8, Math.min(rL - 1, Math.round((item.depth * multiplier) * 10) / 10));
+          return { ...item, width: newW, depth: newD };
+        }
+        return item;
+      }));
+    } else if (activeStruct) {
+      setStructuralElements(structuralElements.map(item => {
+        if (item.id === selectedStructId) {
+          const newW = Math.max(0.5, Math.min(rW - 1, Math.round(((item.width || 2) * multiplier) * 10) / 10));
+          const newD = Math.max(0.5, Math.min(rL - 1, Math.round(((item.depth || 2) * multiplier) * 10) / 10));
+          return { ...item, width: newW, depth: newD };
+        }
+        return item;
+      }));
+    }
+  };
+
   // Rotate Piece by 90 degrees or arbitrary angle
   const rotateItem = (angleRad: number) => {
     if (activeItem) {
@@ -177,6 +200,44 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
       setSelectedStructId(null);
     }
   };
+
+  // Keyboard shortcut listener: Arrow keys (nudge), Ctrl +/- or +/- (scale), R (rotate), Del (delete)
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      const isModifier = e.ctrlKey || e.metaKey;
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        nudgeItem(0, e.shiftKey ? -1.0 : -0.5);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        nudgeItem(0, e.shiftKey ? 1.0 : 0.5);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        nudgeItem(e.shiftKey ? -1.0 : -0.5, 0);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nudgeItem(e.shiftKey ? 1.0 : 0.5, 0);
+      } else if ((isModifier && (e.key === '=' || e.key === '+')) || e.key === ']' || (e.key === '+' && !isModifier)) {
+        e.preventDefault();
+        scaleItem(1.1);
+      } else if ((isModifier && (e.key === '-' || e.key === '_')) || e.key === '[' || (e.key === '-' && !isModifier)) {
+        e.preventDefault();
+        scaleItem(0.9);
+      } else if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        rotateItem(e.shiftKey ? -Math.PI / 2 : Math.PI / 2);
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteSelected();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, selectedItemId, selectedStructId, layout, structuralElements]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-6 animate-fade-in">
@@ -306,7 +367,39 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
                   </div>
                 </div>
 
-                {/* Vertical Elevation Controls (3D Height / Y-Axis) */}
+                {/* Dimensions & Scale Controls (Make Bigger / Smaller) */}
+                <div className="space-y-2 pt-2 border-t border-border/40">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Dimensions & Sizing
+                    </span>
+                    <span className="text-xs font-mono font-bold text-primary">
+                      {Math.round(((activeItem?.width || activeStruct?.width || 2)) * 10) / 10}ft × {Math.round(((activeItem?.depth || activeStruct?.depth || 2)) * 10) / 10}ft
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => scaleItem(0.9)} 
+                      className="text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 py-2.5"
+                      title="Shrink piece smaller (Ctrl -)"
+                    >
+                      <ZoomOut size={14} /> Shrink (-10%)
+                      <kbd className="text-[9px] bg-muted/60 px-1 py-0.5 rounded border text-muted-foreground">Ctrl -</kbd>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => scaleItem(1.1)} 
+                      className="text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 py-2.5"
+                      title="Enlarge piece bigger (Ctrl +)"
+                    >
+                      <ZoomIn size={14} /> Enlarge (+10%)
+                      <kbd className="text-[9px] bg-muted/60 px-1 py-0.5 rounded border text-muted-foreground">Ctrl +</kbd>
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-2 pt-2 border-t border-border/40">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -390,9 +483,9 @@ const CustomizeOverlay: React.FC<CustomizeOverlayProps> = ({
 
           {/* Right Interactive CAD Blueprint Canvas */}
           <div className="flex-1 bg-[#0f172a] p-6 lg:p-10 flex flex-col items-center justify-center relative overflow-hidden select-none">
-            <div className="absolute top-4 left-6 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs font-mono text-white/80">
+            <div className="absolute top-4 left-6 z-10 flex items-center gap-3 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-mono text-white/90">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Click empty grid to insert tool • Click & drag any piece to move directly on floor plan</span>
+              <span>Drag / Arrow keys = Nudge • Ctrl + / - = Resize • R = Rotate • Del = Remove</span>
             </div>
 
             <div className="w-full h-full max-w-4xl max-h-[70vh] flex items-center justify-center">
