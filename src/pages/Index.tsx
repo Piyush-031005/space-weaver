@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import RoomBuilder from "@/components/RoomBuilder";
 import SpaceGenomePreview from "@/components/SpaceGenomePreview";
 import RealHomeShowcase from "@/components/RealHomeShowcase";
+import RoomRenovationStudio from "@/components/RoomRenovationStudio";
+import BlueprintVisualizer from "@/components/BlueprintVisualizer";
 import { Cpu } from "lucide-react";
 
 // Lazy load 3D WebGL Canvas for 90+ Lighthouse Performance
@@ -114,6 +116,12 @@ const Index = () => {
         />
       </Suspense>
       
+      {/* I Uploaded My Floor Plan: AI Blueprint to 3D Apartment Engine */}
+      <BlueprintVisualizer />
+
+      {/* Before/After Room Renovation & Alcove Makeover Studio */}
+      <RoomRenovationStudio />
+
       {/* Real Home Transformations Showcase (4K Photography & Practical Stories) */}
       <RealHomeShowcase />
 

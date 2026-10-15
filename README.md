@@ -121,10 +121,22 @@ Includes India-specific items:
 - **Week 3** ✅ Furniture catalog (30 items) + SceneEval evaluation
 - **Week 4** ✅ Color-coded 2D plans + score bars + door swing arcs + log-choice
 - **Week 4** ✅ Simulated Annealing refinement (SIGGRAPH 2011)
-- **Week 5** 🔄 Size-matched shopping list + structural constraints (door swing zones)
-- **Week 6** — LLM intent layer ("small room, study at night, want cozy")
-- **Week 7–8** — "Will it fit?" seller widget (B2B revenue stream)
-- **Week 9–12** — Exam hall seating (B2B pilot) + user testing with 5 real people
+- **Week 5** ✅ Size-matched shopping list + structural constraints (door swing zones)
+- **Week 6** ✅ NLP intent layer ("small room, study at night, want cozy")
+- **Week 7** ✅ Session preference learning + "Will it fit?" B2B seller widget
+- **Week 8** ✅ B2B Verticals: Exam Hall Seating (UGC norms) & Parking Lot Engine (NBC norms)
+
+---
+
+## B2B Verticals (Spatial Intelligence Beyond Homes)
+
+Space Weaver's pure math engine architecture allows us to instantly solve commercial spatial problems without needing 10,000+ training images.
+
+1. **Exam Hall Engine (`/api/exam-hall`)**: Enforces UGC/CBSE anti-malpractice spacing (1m between desks), invigilator aisles (3ft), and board clearance (5ft). Tested up to 126 seats in 80x50ft halls.
+2. **Parking Lot Engine (`/api/parking-lot`)**: Enforces NBC India 2016 norms. Evaluates horizontal vs vertical packing, creates 6m driveways, injects ADA disabled spots near the entrance. Achieves ~260-280 sq.ft/car efficiency.
+3. **Seller Widget (`widget.html`)**: Standalone, zero-dependency HTML embed for furniture sellers (e.g. Pepperfry, Urban Ladder) to offer pre-purchase room fit checks directly on product pages.
+4. **AI Blueprint to 3D Apartment Engine (`/blueprint-3d`)**: Converts 2D CAD blueprints into 5 photorealistic 3D interior styles (Modern Luxury, Tropical, Japandi, Scandinavian, Farmhouse) with 5-zone multi-room spatial breakdown.
+5. **Before → After Room Renovation Studio (`/renovations`)**: Interactive split-screen comparison slider transforming empty stair nooks and dated rental spaces into custom architectural workstations and libraries.
 
 ---
 
