@@ -16,6 +16,10 @@ interface LayoutOption {
   roast?: string[];
   droppedItems?: any[];
   structuralElements?: any[];
+  fitWarnings?: any[];
+  scoreBreakdown?: Record<string, number>;
+  scoreTotal?: number;
+  explanation?: string;
 }
 
 interface LayoutGalleryProps {
@@ -228,12 +232,16 @@ const LayoutGallery: React.FC<LayoutGalleryProps> = ({
                     {/* Fit warnings */}
                     {opt.fitWarnings && opt.fitWarnings.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {opt.fitWarnings.slice(0, 2).map((w: string, wi: number) => (
-                          <span key={wi} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
-                            style={{ background: 'rgba(245,158,11,0.12)', color: '#fcd34d', border: '1px solid rgba(245,158,11,0.25)' }}>
-                            ⚠️ {w}
-                          </span>
-                        ))}
+                        {opt.fitWarnings.slice(0, 2).map((w: any, wi: number) => {
+                          const text = typeof w === "string" ? w : w?.message || String(w || "");
+                          if (!text) return null;
+                          return (
+                            <span key={wi} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                              style={{ background: 'rgba(245,158,11,0.12)', color: '#fcd34d', border: '1px solid rgba(245,158,11,0.25)' }}>
+                              ⚠️ {text}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
 

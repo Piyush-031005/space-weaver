@@ -24,7 +24,7 @@ interface ShoppingItem {
   fitsRoom: boolean;
   gapWidth: number;
   gapDepth: number;
-  fitWarnings: string[];
+  fitWarnings: any[];
 }
 
 interface ShoppingListPanelProps {
@@ -75,7 +75,8 @@ const ShoppingListPanel: React.FC<ShoppingListPanelProps> = ({ furniture, room, 
     const text = shoppingList.map(i => {
       const m = i.catalogMatch;
       if (!m) return `• ${i.itemType}`;
-      return `• ${m.name} (${m.widthFt}×${m.depthFt}ft | ₹${m.priceRangeINR})\n  ${m.brands.join(', ')}\n  ${i.fitsRoom ? '✅ Fits' : '⚠️ ' + i.fitWarnings.join('; ')}`;
+      const warnStr = (i.fitWarnings || []).map((w: any) => typeof w === 'string' ? w : w?.message || String(w || '')).filter(Boolean).join('; ');
+      return `• ${m.name} (${m.widthFt}×${m.depthFt}ft | ₹${m.priceRangeINR})\n  ${m.brands.join(', ')}\n  ${i.fitsRoom ? '✅ Fits' : '⚠️ ' + warnStr}`;
     }).join('\n\n');
     navigator.clipboard.writeText(`Space Weaver — Shopping List\nRoom: ${room.width}×${room.length}ft | Budget: ${fmt(totalMin)}–${fmt(totalMax)}\n\n${text}`);
   };
@@ -141,9 +142,13 @@ const ShoppingListPanel: React.FC<ShoppingListPanelProps> = ({ furniture, room, 
                   </div>
                 </div>
 
-                {item.fitWarnings.length > 0 && (
+                {item.fitWarnings && item.fitWarnings.length > 0 && (
                   <div className="sl-warnings">
-                    {item.fitWarnings.map((w, i) => <div key={i} className="sl-warn-line">⚠️ {w}</div>)}
+                    {item.fitWarnings.map((w: any, i: number) => {
+                      const text = typeof w === 'string' ? w : w?.message || String(w || '');
+                      if (!text) return null;
+                      return <div key={i} className="sl-warn-line">⚠️ {text}</div>;
+                    })}
                   </div>
                 )}
 

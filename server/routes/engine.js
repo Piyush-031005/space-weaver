@@ -136,7 +136,7 @@ router.post('/generate-layout', async (req, res) => {
         scoreTotal: ph.scoreTotal || 0,
         scoreBreakdown: ph.scoreBreakdown || {},
         explanation: ph.explanation || '',
-        fitWarnings: ph.fitWarnings || [],
+        fitWarnings: (ph.fitWarnings || []).map(w => typeof w === 'string' ? w : w?.message || String(w || '')).filter(Boolean),
         philosophyWeights: weights,
       };
     }));

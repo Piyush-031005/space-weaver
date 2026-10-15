@@ -37,12 +37,12 @@ const GeneratingLoader = ({ active }: { active: boolean }) => {
 const DesignResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const searchParams = new URLSearchParams(location.search);
   const shareId = searchParams.get('shareId');
-  
+
   const { data: initialData, payloadToUse } = location.state || {};
-  
+
   const [activeOptionIndex, setActiveOptionIndex] = useState(0);
   const [currentData, setCurrentData] = useState(initialData);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -81,7 +81,7 @@ const DesignResults = () => {
         roomWidth: payloadToUse?.room?.width,
         roomLength: payloadToUse?.room?.length,
       }),
-    }).catch(() => {}); // non-blocking
+    }).catch(() => { }); // non-blocking
 
     // 2. Log to local preference store (personalises gallery on next visit)
     logChoice(
@@ -111,10 +111,10 @@ const DesignResults = () => {
     if (newVibe === currentVibe || isGenerating) return;
     setCurrentVibe(newVibe);
     setIsGenerating(true);
-    
+
     try {
-      const payload = { 
-        ...payloadToUse, 
+      const payload = {
+        ...payloadToUse,
         vibe: newVibe,
         structuralElements: payloadToUse?.structuralElements || []
       };
@@ -123,7 +123,7 @@ const DesignResults = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      
+
       const newData = await response.json();
       if (newData && newData.options) {
         setCurrentData(newData);
@@ -159,7 +159,7 @@ const DesignResults = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(activeOption)
       });
-      
+
       const { id } = await response.json();
       const url = `${window.location.origin}/results?shareId=${id}`;
       await navigator.clipboard.writeText(url);
@@ -188,13 +188,13 @@ const DesignResults = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onGetStarted={() => navigate('/')} />
-      
+
       {/* Top bar with back button and vibe switcher */}
       <div className="container mx-auto px-6 pt-24 md:pt-28 pb-4 flex flex-col md:flex-row items-center justify-between border-b border-border/40 gap-4 relative z-40">
         <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 text-foreground/80 hover:text-foreground">
           <ArrowLeft size={16} /> Back to Configurator
         </Button>
-        
+
         <div className="flex items-center gap-1.5 bg-muted/40 p-1.5 rounded-2xl border border-border/40 max-w-full overflow-hidden">
           <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground px-2.5 hidden md:inline">Layout Mode:</span>
           {[
@@ -206,11 +206,10 @@ const DesignResults = () => {
               key={vibe.id}
               onClick={() => handleVibeSwitch(vibe.id)}
               disabled={isGenerating}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                currentVibe === vibe.id
-                  ? "bg-foreground text-background shadow-md scale-[1.01]"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              }`}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${currentVibe === vibe.id
+                ? "bg-foreground text-background shadow-md scale-[1.01]"
+                : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                }`}
             >
               <span>{vibe.label}</span>
               <span className="opacity-70 font-normal hidden lg:inline">({vibe.desc})</span>
@@ -224,9 +223,9 @@ const DesignResults = () => {
       <div className="flex-none h-[48vh] relative border-b border-border/50 overflow-hidden">
         <GeneratingLoader active={isGenerating} />
         <Suspense fallback={<div className="h-full w-full bg-background flex items-center justify-center text-primary font-mono text-sm">Loading 3D Spatial Visualization...</div>}>
-          <WebGLHero 
-            onGenerate={() => {}} 
-            isGenerating={isGenerating} 
+          <WebGLHero
+            onGenerate={() => { }}
+            isGenerating={isGenerating}
             hasGenerated={true}
             layoutData={activeOption?.layout}
             fixedElements={activeOption?.structuralElements || payloadToUse?.structuralElements || []}
@@ -327,7 +326,7 @@ const DesignResults = () => {
                             <span className="w-2 h-2 rounded-full bg-foreground" /> {item.type}
                           </span>
                           <span className="text-[11px] font-mono text-muted-foreground">
-                            ({Math.round(item.x)}ft, {Math.round(item.y)}ft) • {Math.round((item.rotation || 0) * (180/Math.PI))}°
+                            ({Math.round(item.x)}ft, {Math.round(item.y)}ft) • {Math.round((item.rotation || 0) * (180 / Math.PI))}°
                           </span>
                         </div>
                         <div className="space-y-1 pl-4 border-l border-border/60">
@@ -372,14 +371,14 @@ const DesignResults = () => {
         />
 
         {activeOption && (
-          <SpaceDNA 
-            spaceData={activeOption} 
+          <SpaceDNA
+            spaceData={activeOption}
             onShare={handleShare}
             onDownload={handleDownload}
             onCustomize={() => setIsCustomizeOpen(true)}
           />
         )}
-        
+
         {/* Dynamic Budget Decor / Monetization */}
         <div className="mt-12">
           <AffiliateShowcase budget={payloadToUse?.budget || "budget"} />
@@ -387,7 +386,7 @@ const DesignResults = () => {
       </div>
 
       {activeOption && (
-        <CustomizeOverlay 
+        <CustomizeOverlay
           isOpen={isCustomizeOpen}
           onClose={() => {
             setIsCustomizeOpen(false);
