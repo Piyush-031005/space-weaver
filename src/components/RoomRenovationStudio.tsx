@@ -1,245 +1,185 @@
-import React, { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Sparkles, Upload, ArrowRight, Check, Sliders, 
-  Layers, ShieldCheck, Download, RefreshCw, Eye, Lightbulb, Compass
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+// src/components/RoomRenovationStudio.tsx
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { MoveHorizontal, Sparkles, Upload, ArrowUpRight, Check, Compass, ShieldCheck } from 'lucide-react';
 
 interface RenovationPreset {
   id: string;
   title: string;
-  category: string;
-  tagline: string;
-  image: string; // Combined or comparison image
+  subtitle: string;
+  metricBadge: string;
   beforeLabel: string;
   afterLabel: string;
-  efficiencyGain: string;
-  estimatedBudget: string;
-  timeline: string;
-  keyFeatures: string[];
-  materials: string[];
-  description: string;
+  specs: string[];
+  beforeImage?: string;
+  afterImage?: string;
   roomParams: { width: number; length: number; furniture: any[]; vibe: string };
+  beforeSvgType: 'stairs-empty' | 'rental-dated' | 'stairs-nook';
+  afterSvgType: 'stairs-library' | 'stairs-office' | 'rental-modern' | 'stairs-credenza';
 }
 
-const PRESETS: RenovationPreset[] = [
+const RENOVATION_PRESETS: RenovationPreset[] = [
   {
-    id: "under-stairs-office",
-    title: "Under-Stairs Architectural Home Office",
-    category: "Alcove & Nook Optimization",
-    tagline: "Turn an empty stair void into an ergonomic, light-filled study sanctuary",
-    image: "/renovations/under_stair_desk.jpg",
-    beforeLabel: "Empty Stair Void",
-    afterLabel: "Built-In Study Desk & Shelving",
-    efficiencyGain: "+165% Usable Space",
-    estimatedBudget: "$850 – $1,400",
-    timeline: "2 Days Custom Millwork",
-    keyFeatures: [
-      "Custom floating desktop matched to stair tread angle",
-      "Triple-tier open display shelves for books and plants",
-      "Ergonomic low-back swivel chair with 36\" pushback clearance",
-      "Flush under-shelf 3000K warm LED light strip"
+    id: 'stairs-library',
+    title: 'Under-Stairs Curated Reading Library',
+    subtitle: 'Foyr-style dead-space conversion into custom millwork library',
+    metricBadge: '+140% Storage Volume',
+    beforeLabel: 'BEFORE: Empty Under-Stairs Drywall',
+    afterLabel: 'AFTER: Charcoal Bookcase & Cognac Lounge',
+    beforeImage: '/renovations/stair_office_before.jpg',
+    afterImage: '/renovations/stair_library_after.jpg',
+    specs: [
+      'Custom matte charcoal built-in bookcase fit to 38° stair stringer',
+      'Mid-century cognac leather armchair with bouclé lumbar pillow',
+      '2700K directional brass sconce + woven wool area rug',
     ],
-    materials: ["White Oak Veneer", "Matte Powdercoated Steel", "Dimmable LED Channels"],
-    description: "Transforms dead space underneath standard residential stairs into a productive work-from-home corner without expanding the room's footprint.",
-    roomParams: {
-      width: 14,
-      length: 18,
-      furniture: [
-        { id: "desk-1", type: "table", width: 5, depth: 2.5 },
-        { id: "chair-1", type: "chair", width: 2.2, depth: 2.2 },
-        { id: "bookshelf-1", type: "bookshelf", width: 4, depth: 1.2 }
-      ],
-      vibe: "cozy"
-    }
-  },
-  {
-    id: "under-stairs-library",
-    title: "Under-Stairs Curated Reading Library",
-    category: "Luxury Architectural Nook",
-    tagline: "Cozy reading retreat with charcoal built-ins and vintage leather armchair",
-    image: "/renovations/under_stair_library.jpg",
-    beforeLabel: "Bare Drywall",
-    afterLabel: "Floor-to-Ceiling Bookshelf & Lounge",
-    efficiencyGain: "+140% Storage Volume",
-    estimatedBudget: "$1,200 – $2,100",
-    timeline: "3 Days Cabinetry Build",
-    keyFeatures: [
-      "Angled multi-tier bookshelf recessed into stair rise",
-      "Cognac full-grain leather accent chair with lumbar support",
-      "Plush woven storage ottoman for footrest or throw blankets",
-      "Brass directional task spotlight for night reading"
-    ],
-    materials: ["Charcoal Matte Lacquer", "Cognac Saddle Leather", "Brushed Brass Fixtures"],
-    description: "Maximizes vertical wall storage in an otherwise neglected stair corner, creating a sanctuary for relaxation and book displays.",
-    roomParams: {
-      width: 16,
-      length: 20,
-      furniture: [
-        { id: "chair-1", type: "chair", width: 3, depth: 3 },
-        { id: "bookshelf-1", type: "bookshelf", width: 5, depth: 1.5 },
-        { id: "lamp-1", type: "lamp", width: 1.5, depth: 1.5 }
-      ],
-      vibe: "aesthetic"
-    }
-  },
-  {
-    id: "rental-living-makeover",
-    title: "Dated Rental Living Room Transformation",
-    category: "Full Space Makeover",
-    tagline: "Rental-friendly botanical wallpaper, warm lighting layers, and cozy lounge zoning",
-    image: "/renovations/rental_makeover.jpg",
-    beforeLabel: "Dated & Bland Carpet",
-    afterLabel: "Modern Warm Aesthetic Lounge",
-    efficiencyGain: "+90% Visual Harmony",
-    estimatedBudget: "$600 – $1,200",
-    timeline: "1 Weekend DIY",
-    keyFeatures: [
-      "Peel-and-stick botanical statement wall behind media console",
-      "Layered oversized jute rug concealing tired wall-to-wall carpeting",
-      "Linear LED cove string lighting for cozy twilight ambience",
-      "Low-profile Scandinavian seating cluster facing primary natural light"
-    ],
-    materials: ["Removable Vinyl Wallpaper", "Natural Jute Fiber", "2700K Ambient LED Rope"],
-    description: "Upgrades a generic, dated rental living room into a designer-grade space without permanent wall modifications or security deposit risks.",
-    roomParams: {
-      width: 15,
-      length: 20,
-      furniture: [
-        { id: "sofa-1", type: "sofa", width: 7, depth: 3.2 },
-        { id: "table-1", type: "table", width: 3.5, depth: 2 },
-        { id: "chair-1", type: "chair", width: 2.8, depth: 2.8 },
-        { id: "tv-1", type: "tv", width: 4.5, depth: 1.2 }
-      ],
-      vibe: "cozy"
-    }
-  },
-  {
-    id: "under-stairs-office-desk",
-    title: "Under-Stairs Minimalist Workstation",
-    category: "Compact Space Planning",
-    tagline: "Clean Scandinavian white cabinetry with dual drawer pedestals and corkboard",
-    image: "/renovations/under_stair_office.jpg",
-    beforeLabel: "Empty Stair Entry",
-    afterLabel: "Double-Pedestal Built-in Desk",
-    efficiencyGain: "+180% Organization",
-    estimatedBudget: "$700 – $1,100",
-    timeline: "1 Day Modular Assembly",
-    keyFeatures: [
-      "Twin file/storage drawer pedestals supporting butcherblock desktop",
-      "Integrated pinboard backsplash for notes and inspirational art",
-      "Low-profile swivel desk chair tucked flush under counter",
-      "Overhead cube shelving for books, bins, and curated pottery"
-    ],
-    materials: ["Nordic Pine Wood", "Matte White Melamine", "Natural Cork Backing"],
-    description: "A bright, accessible home office built directly into the main circulation corridor without protruding into the entryway walkway.",
     roomParams: {
       width: 14,
       length: 16,
       furniture: [
-        { id: "desk-1", type: "table", width: 5.5, depth: 2.5 },
-        { id: "chair-1", type: "chair", width: 2.2, depth: 2.2 },
-        { id: "bookshelf-1", type: "bookshelf", width: 3.5, depth: 1.2 }
+        { id: 'lib-chair', name: 'Leather Lounge Chair', type: 'chair', x: 5, y: 8, width: 3, depth: 3, rotation: 0 },
+        { id: 'lib-shelf', name: 'Built-in Bookcase', type: 'bookshelf', x: 2, y: 8, width: 8, depth: 1.5, rotation: 0 },
+        { id: 'lib-lamp', name: 'Directional Brass Lamp', type: 'lamp', x: 8, y: 8, width: 1.5, depth: 1.5, rotation: 0 }
       ],
-      vibe: "space_saver"
-    }
+      vibe: 'aesthetic'
+    },
+    beforeSvgType: 'stairs-empty',
+    afterSvgType: 'stairs-library',
   },
   {
-    id: "under-stairs-luxury-display",
-    title: "Under-Stairs Architectural Display Credenza",
-    category: "High-End Millwork",
-    tagline: "Backlit slatted wall paneling with floating cantilevered storage credenza",
-    image: "/renovations/under_stair_display.jpg",
-    beforeLabel: "Unfinished Nook",
-    afterLabel: "Luxury Backlit Display Credenza",
-    efficiencyGain: "+130% Aesthetic Value",
-    estimatedBudget: "$1,800 – $3,200",
-    timeline: "3 Days Custom Fabrication",
-    keyFeatures: [
-      "Concealed LED light channels creating dramatic vertical wall grazing",
-      "Cantilevered wall-hung credenza with push-to-open seamless doors",
-      "Warm acoustic oak veneer backing dampening stair footfall noise",
-      "Recessed museum-quality art niche for botanical ceramics"
+    id: 'stairs-office',
+    title: 'Under-Stairs Architectural Home Office',
+    subtitle: 'Ergonomic double-pedestal workstation tucked beneath staircase',
+    metricBadge: '+165% Usable Space',
+    beforeLabel: 'BEFORE: Unfinished Stairwell Alcove',
+    afterLabel: 'AFTER: White Oak Desk & Floating Shelving',
+    beforeImage: '/renovations/stair_office_before.jpg',
+    afterImage: '/renovations/stair_office_after.jpg',
+    specs: [
+      'Floating white oak butcher-block desk with dual file pedestals',
+      'Triple-tier open shelving + integrated cork pinboard',
+      'Swivel task chair with 36-inch chair pull-out clearance',
     ],
-    materials: ["FSC Rift White Oak", "Integrated COB LED Strips", "Fluted Wall Cladding"],
-    description: "An ultra-luxurious architectural feature wall that turns dead stair space into the centerpiece of the ground floor.",
+    roomParams: {
+      width: 14,
+      length: 18,
+      furniture: [
+        { id: 'desk-1', name: 'Butcherblock Study Desk', type: 'table', x: 6, y: 9, width: 5.5, depth: 2.5, rotation: 0 },
+        { id: 'chair-1', name: 'Ergonomic Swivel Chair', type: 'chair', x: 6, y: 6.5, width: 2.2, depth: 2.2, rotation: 0 },
+        { id: 'shelf-1', name: 'Floating Open Shelves', type: 'bookshelf', x: 6, y: 11, width: 4.5, depth: 1.2, rotation: 0 }
+      ],
+      vibe: 'cozy'
+    },
+    beforeSvgType: 'stairs-empty',
+    afterSvgType: 'stairs-office',
+  },
+  {
+    id: 'rental-makeover',
+    title: 'Dated Rental Living Room Makeover',
+    subtitle: 'Non-destructive peel-and-stick & lighting transformation',
+    metricBadge: '+90% Visual Harmony',
+    beforeLabel: 'BEFORE: Dated Carpet & Bare Corner',
+    afterLabel: 'AFTER: Botanical Wallpaper & 2700K Perimeter LEDs',
+    beforeImage: '/renovations/rental_living_before.jpg',
+    afterImage: '/renovations/rental_living_after.jpg',
+    specs: [
+      'Removable botanical peel-and-stick feature wall',
+      'Layered vintage medallion rug over existing rental carpet',
+      'Floating media console with 55" OLED & warm string lighting',
+    ],
     roomParams: {
       width: 16,
-      length: 22,
+      length: 20,
       furniture: [
-        { id: "bookshelf-1", type: "bookshelf", width: 6, depth: 1.5 },
-        { id: "table-1", type: "table", width: 4, depth: 1.8 }
+        { id: 'sofa-1', name: 'Curved Cream Sectional', type: 'sofa', x: 8, y: 12, width: 7, depth: 3.5, rotation: 0 },
+        { id: 'table-1', name: 'Sculptural Coffee Table', type: 'table', x: 8, y: 9, width: 3.5, depth: 2.2, rotation: 0 },
+        { id: 'tv-1', name: 'Media Console & Wall', type: 'tv', x: 8, y: 3, width: 5, depth: 1.2, rotation: 0 }
       ],
-      vibe: "aesthetic"
-    }
-  }
+      vibe: 'cozy'
+    },
+    beforeSvgType: 'rental-dated',
+    afterSvgType: 'rental-modern',
+  },
+  {
+    id: 'stairs-credenza',
+    title: 'Under-Stairs Luxury Display Credenza',
+    subtitle: 'Backlit architectural showcase with handleless cabinetry',
+    metricBadge: '+125% Property Value Appeal',
+    beforeLabel: 'BEFORE: Blank Hallway Stair Wall',
+    afterLabel: 'AFTER: Backlit Floating Credenza & Gallery Niche',
+    beforeImage: '/renovations/stair_office_before.jpg',
+    afterImage: '/renovations/stair_library_after.jpg',
+    specs: [
+      '4-door matte champagne handleless credenza with LED toe-kick',
+      'Recessed 3000K linear cove lighting along stair soffit',
+      'Framed minimalist gallery piece & indoor botanical accents',
+    ],
+    roomParams: {
+      width: 14,
+      length: 16,
+      furniture: [
+        { id: 'cred-1', name: 'Wall-Hung Storage Credenza', type: 'storage', x: 7, y: 8, width: 6, depth: 1.8, rotation: 0 },
+        { id: 'lamp-1', name: 'Linear Wall Grazing Light', type: 'lamp', x: 7, y: 11, width: 1.5, depth: 1.5, rotation: 0 }
+      ],
+      vibe: 'aesthetic'
+    },
+    beforeSvgType: 'stairs-nook',
+    afterSvgType: 'stairs-credenza',
+  },
 ];
 
-export default function RoomRenovationStudio() {
+export const RoomRenovationStudio: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedPreset, setSelectedPreset] = useState<RenovationPreset>(PRESETS[0]);
-  const [sliderPos, setSliderPos] = useState<number>(50); // 0 to 100%
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisStep, setAnalysisStep] = useState(0);
-
+  const [activePreset, setActivePreset] = useState<RenovationPreset>(RENOVATION_PRESETS[0]);
+  const [sliderPos, setSliderPos] = useState<number>(50);
+  const [customBefore, setCustomBefore] = useState<string | null>(null);
+  const [customAfter, setCustomAfter] = useState<string | null>(null);
+  const [useRenderMode, setUseRenderMode] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleSliderMove = (clientX: number) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.buttons !== 1 && e.pointerType === 'mouse') return;
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const clamped = Math.max(5, Math.min(95, (x / rect.width) * 100));
-    setSliderPos(clamped);
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    setSliderPos(Math.round((x / rect.width) * 100));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setUploadedImage(url);
-      runCustomAnalysis();
-    }
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setCustomBefore(url);
+    // Use the preset after image as the AI transformation target
+    setCustomAfter(activePreset.afterImage || url);
   };
 
-  const runCustomAnalysis = () => {
-    setIsAnalyzing(true);
-    setAnalysisStep(1);
-    setTimeout(() => setAnalysisStep(2), 700);
-    setTimeout(() => setAnalysisStep(3), 1500);
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setAnalysisStep(0);
-    }, 2200);
-  };
+  const handleOpenIn3D = () => {
+    const payload = {
+      roomWidth: activePreset.roomParams.width,
+      roomLength: activePreset.roomParams.length,
+      theme: activePreset.id,
+      items: activePreset.roomParams.furniture,
+    };
+    sessionStorage.setItem('spaceweaver_active_3d_layout', JSON.stringify(payload));
 
-  const handleOpenIn3D = (preset: RenovationPreset) => {
-    // Generate layout and navigate to /results with room params
-    navigate("/results", {
+    navigate('/results?studio=3d&source=renovation', {
       state: {
         payloadToUse: {
-          room: { width: preset.roomParams.width, length: preset.roomParams.length },
-          furniture: preset.roomParams.furniture,
-          vibe: preset.roomParams.vibe,
+          room: { width: activePreset.roomParams.width, length: activePreset.roomParams.length },
+          furniture: activePreset.roomParams.furniture,
+          vibe: activePreset.roomParams.vibe,
           structuralElements: []
         },
         data: {
           options: [
             {
-              id: preset.id,
-              name: preset.title,
-              desc: preset.tagline,
-              layout: preset.roomParams.furniture.map((f, i) => ({
-                ...f,
-                x: preset.roomParams.width / 2 + (i === 0 ? 0 : i === 1 ? -2.5 : 2.5),
-                y: preset.roomParams.length / 2 + (i === 0 ? 0 : 2),
-                rotation: i === 1 ? Math.PI / 2 : 0
-              })),
-              genome: { archetype: preset.category },
-              philosophyDescription: preset.description,
-              why: preset.keyFeatures
+              id: activePreset.id,
+              name: activePreset.title,
+              desc: activePreset.subtitle,
+              layout: activePreset.roomParams.furniture,
+              genome: { archetype: activePreset.title },
+              why: activePreset.specs
             }
           ]
         }
@@ -248,197 +188,217 @@ export default function RoomRenovationStudio() {
   };
 
   return (
-    <div className="w-full bg-background text-foreground py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-10">
-        
-        {/* Header Section */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold tracking-widest uppercase">
-            <Sparkles size={14} /> AI Room Renovation & Makeover Studio
+    <section className="w-full bg-[#080d18] text-white py-12 px-4 md:px-8 border-t border-white/10">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-xs font-semibold uppercase mb-3">
+              <Sparkles className="w-3.5 h-3.5" /> Before → After AI Renovation Studio
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Awkward Alcoves & Room Makeovers
+            </h2>
+            <p className="text-slate-400 text-sm md:text-base mt-1">
+              Drag the split-screen slider to compare empty under-stairs dead zones against custom architectural build-outs.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-display font-bold text-foreground tracking-tight">
-            Before → After Room Redesign
-          </h1>
-          <p className="text-base text-muted-foreground font-light leading-relaxed">
-            Upload a photo of any awkward nook, dead under-stairs space, or dated room. SpaceWeaver generates parametric built-in furniture millwork, lighting layers, and optimized circulation.
-          </p>
+
+          <div className="flex items-center gap-2 self-start">
+            <button
+              onClick={() => setUseRenderMode(!useRenderMode)}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                useRenderMode
+                  ? 'bg-primary/20 border-primary text-primary'
+                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
+              }`}
+            >
+              {useRenderMode ? '✨ 4K Architectural Renders' : '📐 Procedural SVG Vectors'}
+            </button>
+            <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-xs font-semibold cursor-pointer transition-all">
+              <Upload className="w-4 h-4 text-[#AEFD00]" />
+              Upload Room Photo
+              <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+            </label>
+          </div>
         </div>
 
-        {/* Preset Selector Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar justify-start lg:justify-center">
-          {PRESETS.map((preset) => {
-            const isSelected = selectedPreset.id === preset.id && !uploadedImage;
+        {/* Preset Selector Pills */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+          {RENOVATION_PRESETS.map((preset) => {
+            const active = activePreset.id === preset.id;
             return (
               <button
                 key={preset.id}
                 onClick={() => {
-                  setSelectedPreset(preset);
-                  setUploadedImage(null);
-                  setSliderPos(50);
+                  setActivePreset(preset);
+                  setCustomBefore(null);
+                  setCustomAfter(null);
                 }}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-2 ${
-                  isSelected
-                    ? "bg-foreground text-background border-foreground shadow-md scale-[1.02]"
-                    : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted hover:text-foreground"
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  active
+                    ? 'border-[#AEFD00] bg-slate-900/90 shadow-lg ring-1 ring-[#AEFD00]/30'
+                    : 'border-white/10 bg-slate-900/40 hover:border-white/25'
                 }`}
               >
-                <span>🏛️</span>
-                <span>{preset.title.split(" ")[0]} {preset.title.split(" ")[1]}</span>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#AEFD00]/15 text-[#AEFD00]">
+                  {preset.metricBadge}
+                </span>
+                <h4 className="font-bold text-sm mt-2 line-clamp-1">{preset.title}</h4>
+                <p className="text-xs text-slate-400 mt-1 line-clamp-2">{preset.subtitle}</p>
               </button>
             );
           })}
-
-          {/* Upload Custom Room Photo */}
-          <label className="cursor-pointer px-4 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all border border-dashed border-primary/60 bg-primary/5 text-primary hover:bg-primary/10 flex items-center gap-2 shadow-sm">
-            <Upload size={14} />
-            <span>Upload Your Room Photo</span>
-            <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-          </label>
         </div>
 
-        {/* Main Renovation Viewer */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Visual Comparison Display */}
-          <div className="lg:col-span-8 space-y-4">
-            
-            {/* Split Comparison Frame */}
-            <div 
+        {/* Interactive Split Comparison Canvas */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-8">
+            <div
               ref={containerRef}
-              className="relative w-full aspect-[4/3] sm:aspect-[16/10] rounded-3xl overflow-hidden border border-border/80 shadow-2xl bg-zinc-950 select-none cursor-ew-resize group"
-              onMouseMove={(e) => {
-                if (e.buttons === 1) handleSliderMove(e.clientX);
-              }}
-              onTouchMove={(e) => {
-                if (e.touches[0]) handleSliderMove(e.touches[0].clientX);
-              }}
-              onClick={(e) => handleSliderMove(e.clientX)}
+              onPointerDown={handlePointerMove}
+              onPointerMove={handlePointerMove}
+              className="relative w-full h-[460px] rounded-3xl overflow-hidden border border-white/15 select-none cursor-ew-resize bg-slate-950 shadow-2xl"
             >
-              {isAnalyzing ? (
-                <div className="absolute inset-0 z-30 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-4">
-                  <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                  <div className="space-y-1">
-                    <h3 className="font-display font-bold text-lg text-foreground">
-                      {analysisStep === 1 && "1/3 Detecting architectural perimeter & stairs..."}
-                      {analysisStep === 2 && "2/3 Generating parametric millwork desk & shelving..."}
-                      {analysisStep === 3 && "3/3 Simulating daylight illumination & materials..."}
-                    </h3>
-                    <p className="text-xs font-mono text-muted-foreground">Spatial reasoning engine running...</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Base Image (The User Photo or Preset) */}
-                  <img 
-                    src={uploadedImage || selectedPreset.image} 
-                    alt={selectedPreset.title} 
+              {/* AFTER LAYER (Full Width Base) */}
+              <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#1c222d]">
+                {customAfter ? (
+                  <img
+                    src={customAfter}
+                    alt="After Renovation"
+                    className="w-full h-full object-cover"
+                  />
+                ) : useRenderMode && activePreset.afterImage ? (
+                  <img
+                    src={activePreset.afterImage}
+                    alt="After Renovation"
                     className="w-full h-full object-cover object-center"
                   />
-
-                  {/* Top-Right Badge */}
-                  <div className="absolute top-4 right-4 z-20 bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-xs font-mono text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>{selectedPreset.efficiencyGain}</span>
-                  </div>
-
-                  {/* Left "BEFORE" Tag */}
-                  <div className="absolute top-4 left-4 z-20 bg-black/70 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-[11px] font-mono font-bold text-white uppercase tracking-wider">
-                    {selectedPreset.beforeLabel}
-                  </div>
-
-                  {/* Interactive Slider Divider Bar */}
-                  <div 
-                    className="absolute top-0 bottom-0 z-20 w-1 bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] pointer-events-none"
-                    style={{ left: `${sliderPos}%` }}
-                  >
-                    <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white text-zinc-950 shadow-xl flex items-center justify-center text-xs font-bold border-2 border-primary">
-                      ↔
-                    </div>
-                  </div>
-
-                  {/* Bottom Drag Helper */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-black/70 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 text-[11px] font-mono text-white/90">
-                    👈 Drag slider left/right to compare 👉
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Renovation Overview Banner */}
-            <div className="p-5 rounded-2xl bg-card border border-border/60 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-primary block">
-                  {selectedPreset.category}
+                ) : (
+                  <svg viewBox="0 0 800 500" className="w-full h-full object-cover">
+                    {/* Warm Renovated Architectural Scene */}
+                    <rect width="800" height="400" fill="#f2ece1" />
+                    <rect y="400" width="800" height="100" fill="#b88655" />
+                    {/* Staircase Diagonal */}
+                    <polygon points="120,0 800,360 800,0" fill="#ffffff" stroke="#d4cbbe" strokeWidth="4" />
+                    {/* Under-Stairs Built-In Dark Charcoal Bookcase / Credenza */}
+                    <polygon points="120,40 740,360 740,400 120,400" fill="#282c30" />
+                    {/* Illuminated Shelves & Books */}
+                    {[130, 210, 290].map((y, i) => (
+                      <g key={i}>
+                        <line x1="150" y1={y} x2={250 + i * 160} y2={y} stroke="#454b52" strokeWidth="6" />
+                        <rect x="170" y={y - 38} width="45" height="35" fill="#d97742" rx="2" />
+                        <rect x="230" y={y - 38} width="55" height="35" fill="#e6ccb2" rx="2" />
+                      </g>
+                    ))}
+                    {/* Cognac Leather Lounge Chair in Foreground */}
+                    <rect x="210" y="310" width="140" height="85" rx="14" fill="#8c4a27" />
+                    <rect x="235" y="290" width="90" height="45" rx="8" fill="#f5ebe0" />
+                    {/* Warm Brass Sconce Glow */}
+                    <circle cx="380" cy="175" r="45" fill="rgba(255, 215, 120, 0.35)" />
+                    <circle cx="380" cy="175" r="8" fill="#ffd166" />
+                  </svg>
+                )}
+                <span className="absolute top-4 right-4 bg-[#AEFD00] text-black text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                  {activePreset.afterLabel}
                 </span>
-                <h3 className="font-display font-bold text-xl text-foreground mt-0.5">
-                  {selectedPreset.title}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1 max-w-xl font-light">
-                  {selectedPreset.description}
-                </p>
               </div>
 
-              <Button 
-                onClick={() => handleOpenIn3D(selectedPreset)}
-                className="bg-foreground text-background hover:bg-foreground/90 rounded-xl px-5 py-2.5 text-xs font-bold flex items-center gap-2 whitespace-nowrap shadow-md"
+              {/* BEFORE LAYER (Clipped by Slider Position) */}
+              <div
+                className="absolute inset-0 h-full overflow-hidden"
+                style={{ width: `${sliderPos}%` }}
               >
-                <Compass size={14} /> Open in 3D Studio <ArrowRight size={14} />
-              </Button>
-            </div>
+                {customBefore ? (
+                  <img
+                    src={customBefore}
+                    alt="Before Renovation"
+                    className="w-full h-full object-cover"
+                    style={{ width: containerRef.current?.clientWidth || 800 }}
+                  />
+                ) : useRenderMode && activePreset.beforeImage ? (
+                  <img
+                    src={activePreset.beforeImage}
+                    alt="Before Renovation"
+                    className="w-full h-full object-cover object-center"
+                    style={{ width: containerRef.current?.clientWidth || 800 }}
+                  />
+                ) : (
+                  <svg
+                    viewBox="0 0 800 500"
+                    className="h-full object-cover"
+                    style={{ width: containerRef.current?.clientWidth || 800 }}
+                  >
+                    {/* Blank Empty Under-Stairs Wall */}
+                    <rect width="800" height="400" fill="#dad7d2" />
+                    <rect y="400" width="800" height="100" fill="#9c7a54" />
+                    <polygon points="120,0 800,360 800,0" fill="#e8e6e1" stroke="#b5afa6" strokeWidth="4" />
+                    {/* Bare Railing Balusters */}
+                    {Array.from({ length: 14 }).map((_, idx) => (
+                      <line
+                        key={idx}
+                        x1={160 + idx * 42}
+                        y1={20 + idx * 21}
+                        x2={160 + idx * 42}
+                        y2={80 + idx * 21}
+                        stroke="#222"
+                        strokeWidth="3"
+                      />
+                    ))}
+                  </svg>
+                )}
+                <span className="absolute top-4 left-4 bg-black/80 text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/15">
+                  {activePreset.beforeLabel}
+                </span>
+              </div>
 
+              {/* Drag Handle Divider */}
+              <div
+                className="absolute top-0 bottom-0 w-1 bg-[#AEFD00] shadow-[0_0_15px_#AEFD00]"
+                style={{ left: `${sliderPos}%` }}
+              >
+                <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#AEFD00] text-black flex items-center justify-center shadow-xl">
+                  <MoveHorizontal className="w-5 h-5" />
+                </div>
+              </div>
+
+              {/* Bottom Drag Hint */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/75 backdrop-blur-md px-3.5 py-1 rounded-full text-[11px] font-mono text-white/90 border border-white/10 pointer-events-none">
+                👈 Drag slider left/right to compare 👉
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: Architectural Specifications & Bill of Materials */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Quick Metrics Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-2xl bg-card border border-border/50 space-y-1">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">Estimated Cost</span>
-                <div className="text-lg font-display font-bold text-foreground">{selectedPreset.estimatedBudget}</div>
-                <span className="text-[10px] text-emerald-500 font-medium">Turnkey Material Spec</span>
+          {/* Right 4 Cols: Architectural Specs & 3D Studio Button */}
+          <div className="lg:col-span-4 bg-[#0c1322] rounded-3xl border border-white/10 p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#AEFD00]" />
+                <span className="text-xs font-mono text-[#AEFD00] uppercase">AI Spatial Scan Output</span>
               </div>
-              <div className="p-4 rounded-2xl bg-card border border-border/50 space-y-1">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">Timeline</span>
-                <div className="text-lg font-display font-bold text-foreground">{selectedPreset.timeline}</div>
-                <span className="text-[10px] text-primary font-medium">Zero Structural Demolition</span>
-              </div>
-            </div>
+              <h3 className="text-xl font-bold mt-2">{activePreset.title}</h3>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">{activePreset.subtitle}</p>
 
-            {/* Key Architectural Improvements */}
-            <div className="p-6 rounded-2xl bg-card border border-border/60 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
-                <ShieldCheck size={16} className="text-primary" /> Key Architectural Additions
-              </div>
-              <div className="space-y-3">
-                {selectedPreset.keyFeatures.map((feature, i) => (
-                  <div key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground font-light leading-relaxed">
-                    <Check size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <span>{feature}</span>
+              <div className="mt-6 space-y-3">
+                {activePreset.specs.map((spec, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs text-slate-200">
+                    <Check className="w-4 h-4 text-[#AEFD00] shrink-0 mt-0.5" />
+                    <span>{spec}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Material & Finish Palette */}
-            <div className="p-6 rounded-2xl bg-card border border-border/60 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
-                <Layers size={16} className="text-primary" /> Curated Materials & Finishes
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedPreset.materials.map((mat, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-xl bg-muted/60 border border-border/60 text-xs font-mono text-foreground font-medium">
-                    🪵 {mat}
-                  </span>
-                ))}
-              </div>
-            </div>
-
+            <button
+              onClick={handleOpenIn3D}
+              className="mt-8 w-full flex items-center justify-center gap-2 bg-[#AEFD00] hover:bg-[#9be300] text-black font-bold py-3.5 px-5 rounded-xl transition-all shadow-lg shadow-[#AEFD00]/10"
+            >
+              Open in 3D WebGL Studio <ArrowUpRight className="w-4 h-4" />
+            </button>
           </div>
-
         </div>
-
       </div>
-    </div>
+    </section>
   );
-}
+};
+
+export default RoomRenovationStudio;
