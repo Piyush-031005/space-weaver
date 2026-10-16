@@ -2,10 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import engineRoutes from './routes/engine.js';
 import shareRoutes from './routes/share.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,19 +26,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', engine: 'SpaceWeaver Backend running' });
 });
 
-// Catch-all: log unmatched routes to help debug Vercel routing
-app.use((req, res) => {
-  console.error(`[404] Unmatched route: ${req.method} ${req.url}`);
-  res.status(404).json({ error: 'Route not found', method: req.method, url: req.url });
+// API 404 catch-all: log unmatched /api routes
+app.all('/api/*', (req, res) => {
+  console.error(`[404] Unmatched API route: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'API route not found', method: req.method, url: req.originalUrl });
 });
 
-// On Vercel, static files are handled automatically. Only serve them if running locally.
-if (!process.env.VERCEL) {
-  app.use(express.static(path.join(process.cwd(), 'dist')));
-  app.use((req, res) => {
-    res.sendFile(path.join(process.cwd(), 'dist/index.html'));
-  });
-}
+// Serve frontend production build when running locally or in container
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// SPA Catch-all: send index.html for client-side routing (/blueprint-3d, /renovations, /results, etc.)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
