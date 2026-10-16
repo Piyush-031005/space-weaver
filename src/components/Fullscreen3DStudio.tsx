@@ -51,6 +51,40 @@ const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
 
   const activeItem = layout.find((item, idx) => (item.id || `item-${idx}`) === selectedItemId);
 
+  // Live Walkway Clearance & Fit Warning Engine
+  const fitWarning = React.useMemo(() => {
+    if (!activeItem) return null;
+    const itemW = activeItem.width || 3;
+    const itemD = activeItem.depth || 3;
+    
+    // Check perimeter wall distance (in inches)
+    const leftDist = Math.max(0, (activeItem.x - itemW / 2) * 12);
+    const rightDist = Math.max(0, (rW - (activeItem.x + itemW / 2)) * 12);
+    const topDist = Math.max(0, (activeItem.y - itemD / 2) * 12);
+    const bottomDist = Math.max(0, (rL - (activeItem.y + itemD / 2)) * 12);
+    const minWallDist = Math.min(leftDist, rightDist, topDist, bottomDist);
+
+    if (minWallDist < 26) {
+      return `⚠️ ${activeItem.name || activeItem.type} (${Math.round(itemW)}ft) leaves only ${Math.round(minWallDist)}" clearance to wall.`;
+    }
+
+    // Check distance to other furniture
+    for (const other of layout) {
+      const otherId = other.id || other.name;
+      const curId = activeItem.id || activeItem.name;
+      if (otherId === curId) continue;
+      const otherW = other.width || 3;
+      const otherD = other.depth || 3;
+      const dx = Math.abs(activeItem.x - other.x) - (itemW + otherW) / 2;
+      const dy = Math.abs(activeItem.y - other.y) - (itemD + otherD) / 2;
+      const dist = Math.max(dx, dy) * 12;
+      if (dist < 28 && dist >= 0) {
+        return `⚠️ Tight walkway between ${activeItem.name || activeItem.type} and ${other.name || other.type} (${Math.round(dist)}", recommended ≥ 36").`;
+      }
+    }
+    return null;
+  }, [activeItem, layout, rW, rL]);
+
   // Shift coordinates (Up, Down, Left, Right)
   const nudgeItem = (dx: number, dy: number) => {
     if (!activeItem) return;
@@ -377,6 +411,14 @@ const Fullscreen3DStudio: React.FC<Fullscreen3DStudioProps> = ({
           <div className="absolute top-6 left-6 z-20 bg-zinc-900/80 backdrop-blur-md px-4 py-2 rounded-xl border border-zinc-800 flex items-center gap-2 text-xs font-semibold text-zinc-300 shadow-xl">
             <Layers size={14} className="text-primary" /> Active Style: <span className="text-white font-bold">{activeOption.name}</span>
           </div>
+
+          {/* Live Walkway Clearance Fit Warning Badge */}
+          {fitWarning && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-amber-500 text-zinc-950 font-bold px-4 py-2 rounded-xl border border-amber-300 shadow-2xl flex items-center gap-2 text-xs backdrop-blur-md">
+              <span className="text-base">⚠️</span>
+              <span>{fitWarning}</span>
+            </div>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>

@@ -107,6 +107,42 @@ const DesignResults = () => {
     }
   }, [shareId]);
 
+  useEffect(() => {
+    const studioParam = searchParams.get('studio');
+    if (studioParam === '3d') {
+      setIs3DStudioOpen(true);
+    }
+
+    if (!currentData || !currentData.options || currentData.options.length === 0) {
+      try {
+        const saved = sessionStorage.getItem('spaceweaver_active_3d_layout');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const fallbackOptions = [
+            {
+              id: `layout-${parsed.theme || 'custom'}`,
+              name: parsed.theme ? `${String(parsed.theme).toUpperCase()} 3D Layout` : "Multi-Room 3D Layout",
+              desc: "Procedural multi-room apartment arrangement with calibrated circulation clearances",
+              layout: parsed.items || [],
+              genome: { archetype: parsed.theme || "Modern" },
+              why: [
+                '42-inch primary walkway clearance maintained',
+                'Focal sightlines aligned to natural daylight openings',
+                'Collision-checked architectural placement'
+              ]
+            }
+          ];
+          setCurrentData({ options: fallbackOptions });
+          if (studioParam === '3d') {
+            setIs3DStudioOpen(true);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse sessionStorage 3D layout:", e);
+      }
+    }
+  }, [searchParams]);
+
   const handleVibeSwitch = async (newVibe: string) => {
     if (newVibe === currentVibe || isGenerating) return;
     setCurrentVibe(newVibe);

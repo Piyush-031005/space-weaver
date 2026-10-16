@@ -245,7 +245,9 @@ const Scene = ({
     bookshelf: "/models/bookshelf.glb", 
     bed: "/models/bed.glb", 
     tv: "/models/flat_screen_tv.glb", 
-    lamp: "/models/titanic_lamp.glb"
+    lamp: "/models/titanic_lamp.glb",
+    storage: "/models/bookshelf.glb",
+    island: "/models/classic_table.glb"
   };
 
   const activeItems = layoutData && layoutData.length > 0 
