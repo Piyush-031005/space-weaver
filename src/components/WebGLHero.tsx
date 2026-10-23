@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from "react";
 import { Canvas, useFrame, useThree, ThreeEvent } from "@react-three/fiber";
 import { useGLTF, Environment, OrbitControls, Line } from "@react-three/drei";
 import * as THREE from "three";
@@ -93,15 +93,51 @@ interface FurniturePieceProps {
   onDragEnd?: (x: number, z: number) => void;
 }
 
+// Floating sparkle dots that appear on hover around the piece
+const HoverSparkles = ({ size, clock }: { size: number; clock: THREE.Clock }) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const sparkleCount = 6;
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const t = clock.getElapsedTime();
+    groupRef.current.children.forEach((child, i) => {
+      const angle = (i / sparkleCount) * Math.PI * 2 + t * 1.2;
+      const r = size * 0.72;
+      child.position.x = Math.cos(angle) * r;
+      child.position.z = Math.sin(angle) * r;
+      child.position.y = 0.18 + Math.sin(t * 2 + i) * 0.12;
+      const sc = 0.6 + Math.sin(t * 3 + i * 1.5) * 0.4;
+      child.scale.setScalar(sc * 0.04);
+    });
+  });
+  return (
+    <group ref={groupRef}>
+      {Array.from({ length: sparkleCount }).map((_, i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[1, 8, 8]} />
+          <meshBasicMaterial color="#c8a97e" transparent opacity={0.85} />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
 const FurnitureModel: React.FC<FurniturePieceProps> = ({
   src, chaosPos, arrangedPos, size, phase, index,
   isStudio = false, isSelected = false, onSelect, onDragEnd,
 }) => {
-  const { scene } = useGLTF(src);
+  const { scene, gl: _gl } = useGLTF(src);
   const meshRef = useRef<THREE.Group>(null);
+  const wrapperRef = useRef<THREE.Group>(null);
+  const shadowRef = useRef<THREE.Mesh>(null);
   const isDragging = useRef(false);
-  const { gl, raycaster } = useThree();
+  const isHovered = useRef(false);
+  const hoverProgress = useRef(0); // 0..1 animated target
+  const { gl, raycaster, clock } = useThree();
   const floorPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
+  const baseY = useRef(arrangedPos.y !== undefined ? arrangedPos.y : 0);
+  const hoverLiftY = 0.42;
+  const hoverScaleMax = 0.09; // +9% scale at full hover
 
   const normalizedModel = useMemo(() => {
     const clone = scene.clone();
@@ -125,6 +161,7 @@ const FurnitureModel: React.FC<FurniturePieceProps> = ({
     return clone;
   }, [scene, size]);
 
+  // Sync emissive for selection
   useEffect(() => {
     if (!meshRef.current) return;
     meshRef.current.traverse((child) => {
@@ -139,9 +176,11 @@ const FurnitureModel: React.FC<FurniturePieceProps> = ({
     });
   }, [isSelected]);
 
+  // Phase-based GSAP animation
   useEffect(() => {
-    if (!meshRef.current) return;
-    const ref = meshRef.current;
+    if (!wrapperRef.current) return;
+    const ref = wrapperRef.current;
+    baseY.current = arrangedPos.y !== undefined ? arrangedPos.y : 0;
     if (phase === "chaos") {
       gsap.to(ref.position, { x: chaosPos.x, y: chaosPos.y, z: chaosPos.z, duration: 1.5, ease: "power2.out" });
       gsap.to(ref.rotation, { x: Math.random() * 0.5, y: chaosPos.r, z: Math.random() * 0.5, duration: 1.5, ease: "power2.out" });
@@ -150,20 +189,68 @@ const FurnitureModel: React.FC<FurniturePieceProps> = ({
       gsap.to(ref.rotation, { x: 0, y: 0, z: 0, duration: 0.6, ease: "power2.inOut" });
     } else if (phase === "arranged") {
       const baseDelay = index * 0.05;
-      const targetY = arrangedPos.y !== undefined ? arrangedPos.y : 0;
-      gsap.to(ref.position, { x: arrangedPos.x, y: targetY, z: arrangedPos.z, duration: 2.2, ease: "power3.out", delay: baseDelay });
+      gsap.to(ref.position, { x: arrangedPos.x, y: baseY.current, z: arrangedPos.z, duration: 2.2, ease: "power3.out", delay: baseDelay });
       gsap.to(ref.rotation, { x: 0, y: arrangedPos.r, z: 0, duration: 2.2, ease: "power3.out", delay: baseDelay });
     }
   }, [phase, chaosPos, arrangedPos, index]);
 
-  useFrame(({ clock }) => {
-    if (!meshRef.current || isDragging.current) return;
-    const t = clock.getElapsedTime();
-    if (phase === "chaos") {
-      meshRef.current.position.y += Math.sin(t + index) * 0.005;
-      meshRef.current.rotation.y += Math.cos(t * 0.5 + index) * 0.002;
+  // Per-frame hover lerp + chaos breathing + slow hover spin
+  useFrame(({ clock: c }) => {
+    const t = c.getElapsedTime();
+    const targetProgress = isHovered.current ? 1 : 0;
+    hoverProgress.current += (targetProgress - hoverProgress.current) * 0.1;
+    const hp = hoverProgress.current;
+
+    if (wrapperRef.current && !isDragging.current) {
+      if (phase === "chaos") {
+        wrapperRef.current.position.y += Math.sin(t + index) * 0.005;
+        wrapperRef.current.rotation.y += Math.cos(t * 0.5 + index) * 0.002;
+      } else if (phase === "arranged") {
+        // Float up on hover
+        wrapperRef.current.position.y = baseY.current + hp * hoverLiftY;
+        // Scale pop
+        const s = 1 + hp * hoverScaleMax;
+        wrapperRef.current.scale.setScalar(s);
+        // Slow spin on hover
+        if (hp > 0.05) wrapperRef.current.rotation.y += 0.008 * hp;
+      }
+    }
+
+    // Hover emissive pulse
+    if (wrapperRef.current && phase === "arranged" && !isSelected) {
+      wrapperRef.current.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        if (mesh.isMesh && mesh.material) {
+          const mat = mesh.material as THREE.MeshStandardMaterial;
+          if (mat.emissive) {
+            const pulse = hp * (0.22 + Math.sin(t * 4) * 0.06);
+            mat.emissive.set("#c8a97e");
+            mat.emissiveIntensity = pulse;
+          }
+        }
+      });
+    }
+
+    // Shadow blob shrinks / fades as piece lifts
+    if (shadowRef.current) {
+      const shadowS = 1 + hp * 0.3;
+      shadowRef.current.scale.setScalar(shadowS);
+      (shadowRef.current.material as THREE.MeshBasicMaterial).opacity = 0.18 - hp * 0.1;
     }
   });
+
+  // Pointer handlers
+  const handlePointerEnter = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    isHovered.current = true;
+    gl.domElement.style.cursor = isStudio ? "grab" : "pointer";
+  }, [gl, isStudio]);
+
+  const handlePointerLeave = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    isHovered.current = false;
+    if (!isDragging.current) gl.domElement.style.cursor = "auto";
+  }, [gl]);
 
   const handlePointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!isStudio) return;
@@ -174,21 +261,21 @@ const FurnitureModel: React.FC<FurniturePieceProps> = ({
   }, [isStudio, gl, onSelect]);
 
   const handlePointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
-    if (!isDragging.current || !meshRef.current) return;
+    if (!isDragging.current || !wrapperRef.current) return;
     e.stopPropagation();
     const intersection = new THREE.Vector3();
     raycaster.ray.intersectPlane(floorPlane, intersection);
     if (intersection) {
-      meshRef.current.position.x = intersection.x;
-      meshRef.current.position.z = intersection.z;
+      wrapperRef.current.position.x = intersection.x;
+      wrapperRef.current.position.z = intersection.z;
     }
   }, [raycaster, floorPlane]);
 
   const handlePointerUp = useCallback((e: ThreeEvent<PointerEvent>) => {
-    if (!isDragging.current || !meshRef.current) return;
+    if (!isDragging.current || !wrapperRef.current) return;
     isDragging.current = false;
-    gl.domElement.style.cursor = "auto";
-    onDragEnd?.(meshRef.current.position.x, meshRef.current.position.z);
+    gl.domElement.style.cursor = isHovered.current ? "grab" : "auto";
+    onDragEnd?.(wrapperRef.current.position.x, wrapperRef.current.position.z);
   }, [gl, onDragEnd]);
 
   const handleContextMenu = useCallback((e: ThreeEvent<MouseEvent>) => {
@@ -198,17 +285,38 @@ const FurnitureModel: React.FC<FurniturePieceProps> = ({
 
   return (
     <group
-      ref={meshRef}
+      ref={wrapperRef}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onContextMenu={handleContextMenu}
     >
-      <primitive object={normalizedModel} />
-      {isSelected && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
-          <ringGeometry args={[size * 0.55, size * 0.65, 32]} />
-          <meshBasicMaterial color="#c8a97e" transparent opacity={0.7} side={THREE.DoubleSide} />
+      {/* The actual model */}
+      <group ref={meshRef}>
+        <primitive object={normalizedModel} />
+      </group>
+
+      {/* Soft shadow blob under piece */}
+      <mesh ref={shadowRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+        <circleGeometry args={[size * 0.48, 32]} />
+        <meshBasicMaterial color="#3a2a1a" transparent opacity={0.18} side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Hover sparkle ring */}
+      {phase === "arranged" && <HoverSparkles size={size} clock={clock} />}
+
+      {/* Selection + hover ring */}
+      {(isSelected || phase === "arranged") && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
+          <ringGeometry args={[size * 0.54, size * 0.62, 40]} />
+          <meshBasicMaterial
+            color={isSelected ? "#c8a97e" : "#b09060"}
+            transparent
+            opacity={isSelected ? 0.75 : hoverProgress.current * 0.55}
+            side={THREE.DoubleSide}
+          />
         </mesh>
       )}
     </group>
